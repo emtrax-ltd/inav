@@ -274,12 +274,12 @@ end
 OFF_ON_TABLE = Hash["name" => "off_on", "values" => ["OFF", "ON"]]
 
 class Generator
-    def initialize(src_root, settings_file, output_dir)
+    def initialize(src_root, settings_file, output_dir, use_host_gcc)
         @src_root = src_root
         @settings_file = settings_file
         @output_dir = output_dir || File.dirname(settings_file)
 
-        @compiler = Compiler.new
+        @compiler = Compiler.new(use_host_gcc)
 
         @count = 0
         @max_name_length = 0
@@ -301,6 +301,7 @@ class Generator
 
         check_member_default_values_presence
         sanitize_fields
+        resolv_min_max_and_default_values_if_possible
         initialize_name_encoder
         initialize_value_encoder
         validate_default_values
@@ -359,6 +360,7 @@ class Generator
         @data = YAML.load_file(@settings_file)
 
         initialize_tables
+        initialize_constants
         check_conditions
     end
 
@@ -413,6 +415,11 @@ class Generator
         # Write table pointers
         table_names.each do |name|
             buf << "extern const char * const #{table_variable_name(name)}[];\n"
+        end
+
+        # Write setting constants from settings file
+        @constants.each do |name, value|
+            buf << "#define SETTING_CONSTANT_#{name.upcase} #{value.inspect}\n"
         end
 
         # Write #define'd constants for referencing each setting
@@ -483,7 +490,7 @@ class Generator
         foreach_enabled_group do |group|
             count = 0
             group["members"].each do |member|
-                if is_condition_enabled(member["condition"])
+                if is_condition_enabled(member)
                     count += 1
                 end
             end
@@ -620,7 +627,7 @@ class Generator
                 enc = @value_encoder.encode_values(min, max)
                 buf <<  ", .config.minmax.indexes = #{enc}"
             end
-            buf << ", offsetof(#{group["type"]}, #{member["field"]}) },\n"
+            buf << ", (setting_offset_t)offsetof(#{group["type"]}, #{member["field"]}) },\n"
         end
         buf << "};\n"
 
@@ -658,16 +665,21 @@ class Generator
         return min, max
     end
 
-    def is_condition_enabled(cond)
-        return !cond || @true_conditions.include?(cond)
+    # Condition truth is resolved per group/member occurrence (see
+    # check_conditions), not by condition string, since the same condition
+    # string can appear on multiple groups at different header-inclusion
+    # positions and be true at one but not the other.
+    def is_condition_enabled(obj)
+        return true unless obj["condition"]
+        obj["_condition_enabled"]
     end
 
     def foreach_enabled_member &block
         enum = Enumerator.new do |yielder|
             groups.each do |group|
-                if is_condition_enabled(group["condition"])
+                if is_condition_enabled(group)
                     group["members"].each do |member|
-                        if is_condition_enabled(member["condition"])
+                        if is_condition_enabled(member)
                             yielder.yield group, member
                         end
                     end
@@ -715,6 +727,10 @@ class Generator
         end
     end
 
+    def initialize_constants
+        @constants = @data["constants"]
+    end
+
     def ordered_table_names
         @enabled_tables.to_a().sort()
     end
@@ -752,10 +768,13 @@ class Generator
         value
     end
 
+    # cstddef for offsetof(). Shared by every probe so they all see the same
+    # base macro state.
+    BASE_HEADERS = ["platform.h", "cstddef"]
+
     def compile_test_file(prog)
         buf = StringIO.new
-        # cstddef for offsetof()
-        headers = ["platform.h", "cstddef"]
+        headers = BASE_HEADERS.dup
         @data["groups"].each do |group|
             gh = group["headers"]
             if gh
@@ -769,6 +788,10 @@ class Generator
         end
         buf << "\n"
         buf << prog.string
+        compile_raw(buf)
+    end
+
+    def compile_raw(buf)
         mktmpdir do |dir|
             file = File.join(dir, "test.cpp")
             File.open(file, 'w') {|file| file.write(buf.string)}
@@ -781,45 +804,72 @@ class Generator
 
     def check_conditions
         buf = StringIO.new
-        conditions = Set.new
-        add_condition = -> (c) {
-            if c && !conditions.include?(c)
-                conditions.add(c)
-                buf << "#if "
-                in_word = false
-                c.split('').each do |ch|
-                    if in_word
-                        if !ch.match(/^[a-zA-Z0-9_]$/)
-                            in_word = false
-                            buf << ")"
-                        end
-                        buf << ch
-                    else
-                        if ch.match(/^[a-zA-Z_]$/)
-                            in_word = true
-                            buf << "defined("
-                        end
-                        buf << ch
-                    end
-                end
-                if in_word
-                    buf << ")"
-                end
-                buf << "\n"
-                buf << "#pragma message(#{c.inspect})\n"
-                buf << "#endif\n"
-            end
-        }
-
-        foreach_member do |group, member|
-            add_condition.call(group["condition"])
-            add_condition.call(member["condition"])
+        BASE_HEADERS.each do |h|
+            buf << "#include \"#{h}\"\n"
         end
 
-        stderr = compile_test_file(buf)
-        @true_conditions = Set.new
+        # Tag each group/member occurrence with its own unique probe, rather
+        # than deduping by condition string: the same condition string can
+        # appear on multiple groups, and since a probe's truth now depends on
+        # its position (see comment below), one occurrence being true doesn't
+        # mean another occurrence of the same string is.
+        tags = {}
+        seq = 0
+        add_condition = -> (obj) {
+            c = obj["condition"]
+            next unless c
+            seq += 1
+            tag = "COND#{seq}"
+            tags[tag] = obj
+            buf << "#if "
+            in_word = false
+            c.split('').each do |ch|
+                if in_word
+                    if !ch.match(/^[a-zA-Z0-9_]$/)
+                        in_word = false
+                        buf << ")"
+                    end
+                    buf << ch
+                else
+                    if ch.match(/^[a-zA-Z_]$/)
+                        in_word = true
+                        buf << "defined("
+                    end
+                    buf << ch
+                end
+            end
+            if in_word
+                buf << ")"
+            end
+            buf << "\n"
+            buf << "#pragma message(#{tag.inspect})\n"
+            buf << "#endif\n"
+        }
+
+        # Check each condition right after that group's own headers, matching
+        # the position resolve_types() implicitly relies on: a header's own
+        # #ifdef guard only sees macros defined by headers earlier in this
+        # sequence.
+        @data["groups"].each do |group|
+            gh = group["headers"]
+            if gh
+                gh.each do |h|
+                    buf << "#include \"#{h}\"\n" if h
+                end
+            end
+            add_condition.call(group)
+            group["members"].each do |member|
+                add_condition.call(member)
+            end
+        end
+
+        stderr = compile_raw(buf)
+        true_tags = Set.new
         stderr.scan(/#pragma message\(\"(.*)\"\)/).each do |m|
-            @true_conditions << m[0]
+            true_tags << m[0]
+        end
+        tags.each do |tag, obj|
+            obj["_condition_enabled"] = true_tags.include?(tag)
         end
     end
 
@@ -877,6 +927,8 @@ class Generator
         foreach_enabled_member do |_, member|
             name = member["name"]
             type = member["type"]
+            min = member["min"] || 0
+            max = member["max"]
             default_value = member["default_value"]
 
             next if %i[ zero target ].include? default_value
@@ -894,13 +946,17 @@ class Generator
                 unsigned = !$~[:unsigned].empty?
                 bitsize = $~[:bitsize].to_i
                 type_range = unsigned ? 0..(2**bitsize-1) : (-2**(bitsize-1)+1)..(2**(bitsize-1)-1)
-                raise "Numeric member #{name} doesn't have maximum value defined" unless member.has_key? 'max'
+                min = type_range.min if min.to_s =~ /\AU?INT\d+_MIN\Z/
+                max = type_range.max if max.to_s =~ /\AU?INT\d+_MAX\Z/
                 raise "Member #{name} default value has an invalid type, integer or symbol expected" unless default_value.is_a? Integer or default_value.is_a? Symbol
                 raise "Member #{name} default value is outside type's storage range, min #{type_range.min}, max #{type_range.max}" unless default_value.is_a? Symbol or type_range === default_value
+                raise "Numeric member #{name} doesn't have maximum value defined" unless member.has_key? 'max'
+                raise "Member #{name} default value is outside of the allowed range" if default_value.is_a? Numeric and min.is_a? Numeric and max.is_a? Numeric and not (min..max) === default_value
 
             when type == "float"
-                raise "Numeric member #{name} doesn't have maximum value defined" unless member.has_key? 'max'
                 raise "Member #{name} default value has an invalid type, numeric or symbol expected" unless default_value.is_a? Numeric or default_value.is_a? Symbol
+                raise "Numeric member #{name} doesn't have maximum value defined" unless member.has_key? 'max'
+                raise "Member #{name} default value is outside of the allowed range" if default_value.is_a? Numeric and min.is_a? Numeric and max.is_a? Numeric and not (min..max) === default_value
 
             when type == "string"
                 max = member["max"].to_i
@@ -985,7 +1041,7 @@ class Generator
                 typ = "uint32_t"
             when "float"
                 typ = "float"
-            when /^char \[(\d+)\]/
+            when /^char\s*\[(\d+)\]/
                 # Substract 1 to show the maximum string size without the null terminator
                 member["max"] = $1.to_i - 1;
                 typ = "string"
@@ -1039,6 +1095,18 @@ class Generator
     def check_member_default_values_presence
         missing_default_value_names = foreach_member.inject([]) { |names, (_, member)| member.has_key?("default_value") ? names : names << member["name"] }
         raise "Missing default value for #{missing_default_value_names.count} member#{"s" unless missing_default_value_names.one?}: #{missing_default_value_names * ", "}" unless missing_default_value_names.empty?
+    end
+
+    def resolv_min_max_and_default_values_if_possible
+        foreach_member do |_, member|
+            %w[ min max default_value ].each do |value_type|
+                member_value = member[value_type]
+                if member_value.is_a? String
+                    constant_value = @constants[member_value]
+                    member[value_type] = constant_value unless constant_value.nil?
+                end
+            end
+        end
     end
 
     def resolve_constants(constants)
@@ -1101,7 +1169,7 @@ class Generator
 end
 
 def usage
-    puts "Usage: ruby #{__FILE__} <source_dir> <settings_file> [--json <json_file>]"
+    puts "Usage: ruby #{__FILE__} <source_dir> <settings_file> [--use_host_gcc] [--json <json_file>]"
 end
 
 if __FILE__ == $0
@@ -1120,10 +1188,12 @@ if __FILE__ == $0
         [ "--output-dir", "-o", GetoptLong::REQUIRED_ARGUMENT ],
         [ "--help", "-h", GetoptLong::NO_ARGUMENT ],
         [ "--json", "-j", GetoptLong::REQUIRED_ARGUMENT ],
+        [ "--use_host_gcc", "-g", GetoptLong::NO_ARGUMENT ]
     )
 
     jsonFile = nil
     output_dir = nil
+    use_host_gcc = nil
 
     opts.each do |opt, arg|
         case opt
@@ -1134,10 +1204,12 @@ if __FILE__ == $0
             exit(0)
         when "--json"
             jsonFile = arg
+        when "--use_host_gcc"
+            use_host_gcc = true
         end
     end
 
-    gen = Generator.new(src_root, settings_file, output_dir)
+    gen = Generator.new(src_root, settings_file, output_dir, use_host_gcc)
 
     if jsonFile
         gen.write_json(jsonFile)

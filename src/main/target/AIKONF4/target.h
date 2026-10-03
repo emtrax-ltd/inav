@@ -27,10 +27,6 @@
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
-#define USE_EXTI
-#define GYRO_INT_EXTI            PC4
-#define USE_MPU_DATA_READY_SIGNAL
-
 #define USE_IMU_MPU6000
 #define IMU_MPU6000_ALIGN       CW0_DEG
 #define MPU6000_CS_PIN          SPI1_NSS_PIN
@@ -90,20 +86,11 @@
 
 #define USE_MAG
 #define MAG_I2C_BUS             DEFAULT_I2C_BUS
-#define USE_MAG_AK8963
-#define USE_MAG_AK8975
-#define USE_MAG_HMC5883
-#define USE_MAG_QMC5883
-#define USE_MAG_IST8310
-#define USE_MAG_IST8308
-#define USE_MAG_MAG3110
-#define USE_MAG_LIS3MDL
+#define USE_MAG_ALL
 
 #define RANGEFINDER_I2C_BUS     DEFAULT_I2C_BUS
 #define TEMPERATURE_I2C_BUS     DEFAULT_I2C_BUS
 #define PITOT_I2C_BUS           DEFAULT_I2C_BUS
-#define PCA9685_I2C_BUS         DEFAULT_I2C_BUS
-#define BNO055_I2C_BUS          DEFAULT_I2C_BUS
 
 #define DEFAULT_RX_TYPE         RX_TYPE_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
@@ -146,7 +133,6 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         0xffff
 
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_BUS         BUS_SPI3
 #define MAX7456_CS_PIN          SPI3_NSS_PIN

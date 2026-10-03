@@ -52,12 +52,6 @@
 
 #define USE_MAG
 #define USE_MAG_MPU9250
-#define MAG_MPU9250_ALIGN       CW90_DEG
-
-// MPU6 interrupts
-#define USE_EXTI
-#define GYRO_INT_EXTI            PC4
-#define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_BARO
 #define USE_BARO_BMP280
@@ -65,7 +59,6 @@
 #define BMP280_SPI_BUS          BUS_SPI3
 #define BMP280_CS_PIN           PB3
 
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_BUS         BUS_SPI3
 #define MAX7456_CS_PIN          PA15
@@ -116,7 +109,7 @@
 #define I2C2_SDA                PB11
 
 #define TEMPERATURE_I2C_BUS     BUS_I2C2
-#define BNO055_I2C_BUS          BUS_I2C2
+#define MAG_I2C_BUS             BUS_I2C2
 #endif
 
 #define USE_ADC

@@ -18,7 +18,7 @@
 /*
  * Cleanflight (or Baseflight): original
  * jflyper: Mono-timer and single-wire half-duplex
- * jflyper: Ported to iNav
+ * jflyper: Ported to INAV
  */
 
 #include <stdbool.h>
@@ -169,7 +169,7 @@ static bool isTimerPeriodTooLarge(uint32_t timerPeriod)
 
 static void serialTimerConfigureTimebase(TCH_t * tch, uint32_t baud)
 {
-    uint32_t baseClock = SystemCoreClock / timerClockDivisor(tch->timHw->tim);
+    uint32_t baseClock = timerClock(tch->timHw->tim);
     uint32_t clock = baseClock;
     uint32_t timerPeriod;
 
@@ -381,7 +381,9 @@ void processTxState(softSerial_t *softSerial)
             serialOutputPortActivate(softSerial);
         }
 
-        return;
+        if ((softSerial->port.options & SERIAL_SHORTSTOP) == 0) {
+            return;
+        }
     }
 
     if (softSerial->bitsLeftToTransmit) {
@@ -390,7 +392,10 @@ void processTxState(softSerial_t *softSerial)
 
         setTxSignal(softSerial, mask);
         softSerial->bitsLeftToTransmit--;
-        return;
+
+        if (((softSerial->port.options & SERIAL_SHORTSTOP) == 0) || softSerial->bitsLeftToTransmit) {
+            return;
+        }
     }
 
     softSerial->isTransmittingData = false;
@@ -572,7 +577,7 @@ uint32_t softSerialTxBytesFree(const serialPort_t *instance)
 
     softSerial_t *s = (softSerial_t *)instance;
 
-    uint8_t bytesUsed = (s->port.txBufferHead - s->port.txBufferTail) & (s->port.txBufferSize - 1);
+    uint32_t bytesUsed = (s->port.txBufferHead - s->port.txBufferTail) & (s->port.txBufferSize - 1);
 
     return (s->port.txBufferSize - 1) - bytesUsed;
 }
@@ -618,6 +623,11 @@ void softSerialSetMode(serialPort_t *instance, portMode_t mode)
     instance->mode = mode;
 }
 
+void softSerialSetOptions(serialPort_t *instance, portOptions_t options)
+{
+    instance->options = options;
+}
+
 bool isSoftSerialTransmitBufferEmpty(const serialPort_t *instance)
 {
     return instance->txBufferHead == instance->txBufferTail;
@@ -631,6 +641,7 @@ static const struct serialPortVTable softSerialVTable = {
     .serialSetBaudRate = softSerialSetBaudRate,
     .isSerialTransmitBufferEmpty = isSoftSerialTransmitBufferEmpty,
     .setMode = softSerialSetMode,
+    .setOptions = softSerialSetOptions,
     .isConnected = NULL,
     .writeBuf = NULL,
     .beginWrite = NULL,

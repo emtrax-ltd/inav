@@ -25,7 +25,6 @@
 
 #define BEEPER                  PA8
 #define BEEPER_INVERTED
-#define BEEPER_PWM
 #define BEEPER_PWM_FREQUENCY    2500
 
 // *************** SPI1 Gyro & ACC *******************
@@ -41,11 +40,6 @@
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_BUS         BUS_SPI1
 
-#define USE_EXTI
-#define GYRO_INT_EXTI            PC4
-#define USE_MPU_DATA_READY_SIGNAL
-
-
 // *************** I2C /Baro/Mag *********************
 #define USE_I2C
 #define USE_I2C_DEVICE_2
@@ -57,26 +51,17 @@
 #define USE_BARO_BMP280
 #define USE_BARO_MS5611
 #define USE_BARO_DPS310
+#define USE_BARO_SPL06
 
 #define USE_MAG
 #define MAG_I2C_BUS             BUS_I2C2
-#define USE_MAG_AK8963
-#define USE_MAG_AK8975
-#define USE_MAG_HMC5883
-#define USE_MAG_QMC5883
-#define USE_MAG_IST8310
-#define USE_MAG_MAG3110
-#define USE_MAG_LIS3MDL
+#define USE_MAG_ALL
 
 #define USE_RANGEFINDER
-#define USE_RANGEFINDER_HCSR04_I2C
 #define RANGEFINDER_I2C_BUS     BUS_I2C2
 
 #define PITOT_I2C_BUS           BUS_I2C2
 #define TEMPERATURE_I2C_BUS     BUS_I2C2
-#define PCA9685_I2C_BUS         BUS_I2C2
-#define BNO055_I2C_BUS          BUS_I2C2
-
 
 // *************** SPI2 RM3100 **************************
 #define USE_SPI_DEVICE_2
@@ -85,7 +70,6 @@
 #define SPI2_MOSI_PIN   	    PB15
 
 #define USE_MAG_RM3100
-#define MAG_RM3100_ALIGN        CW0_DEG_FLIP
 #define RM3100_CS_PIN           PB12
 #define RM3100_SPI_BUS          BUS_SPI2
 

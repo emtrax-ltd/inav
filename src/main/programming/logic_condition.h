@@ -26,7 +26,7 @@
 #include "config/parameter_group.h"
 #include "common/time.h"
 
-#define MAX_LOGIC_CONDITIONS 32
+#define MAX_LOGIC_CONDITIONS 64
 
 typedef enum {
     LOGIC_CONDITION_TRUE                        = 0,
@@ -70,7 +70,23 @@ typedef enum {
     LOGIC_CONDITION_RC_CHANNEL_OVERRIDE         = 38,
     LOGIC_CONDITION_SET_HEADING_TARGET          = 39,
     LOGIC_CONDITION_MODULUS                     = 40,
-    LOGIC_CONDITION_LAST                        = 41,
+    LOGIC_CONDITION_LOITER_OVERRIDE             = 41,
+    LOGIC_CONDITION_SET_PROFILE                 = 42,
+    LOGIC_CONDITION_MIN                         = 43,
+    LOGIC_CONDITION_MAX                         = 44,
+    LOGIC_CONDITION_FLIGHT_AXIS_ANGLE_OVERRIDE  = 45,
+    LOGIC_CONDITION_FLIGHT_AXIS_RATE_OVERRIDE   = 46,
+    LOGIC_CONDITION_EDGE                        = 47,
+    LOGIC_CONDITION_DELAY                       = 48,
+    LOGIC_CONDITION_TIMER                       = 49,
+    LOGIC_CONDITION_DELTA                       = 50,
+    LOGIC_CONDITION_APPROX_EQUAL                = 51,
+    LOGIC_CONDITION_LED_PIN_PWM                 = 52,
+    LOGIC_CONDITION_DISABLE_GPS_FIX             = 53,
+    LOGIC_CONDITION_RESET_MAG_CALIBRATION       = 54,
+    LOGIC_CONDITION_SET_GIMBAL_SENSITIVITY      = 55,
+    LOGIC_CONDITION_OVERRIDE_MIN_GROUND_SPEED   = 56,
+    LOGIC_CONDITION_LAST
 } logicOperation_e;
 
 typedef enum logicOperandType_s {
@@ -81,6 +97,7 @@ typedef enum logicOperandType_s {
     LOGIC_CONDITION_OPERAND_TYPE_LC,    // Result of different LC and LC operand
     LOGIC_CONDITION_OPERAND_TYPE_GVAR,  // Value from a global variable
     LOGIC_CONDITION_OPERAND_TYPE_PID,  // Value from a Programming PID
+    LOGIC_CONDITION_OPERAND_TYPE_WAYPOINTS,
     LOGIC_CONDITION_OPERAND_TYPE_LAST
 } logicOperandType_e;
 
@@ -108,19 +125,33 @@ typedef enum {
     LOGIC_CONDITION_OPERAND_FLIGHT_IS_POSITION_CONTROL, // 0/1              // 20
     LOGIC_CONDITION_OPERAND_FLIGHT_IS_EMERGENCY_LANDING, // 0/1             // 21
     LOGIC_CONDITION_OPERAND_FLIGHT_IS_RTH, // 0/1                           // 22
-    LOGIC_CONDITION_OPERAND_FLIGHT_IS_WP, // 0/1                            // 23
-    LOGIC_CONDITION_OPERAND_FLIGHT_IS_LANDING, // 0/1                       // 24
-    LOGIC_CONDITION_OPERAND_FLIGHT_IS_FAILSAFE, // 0/1                      // 25
-    LOGIC_CONDITION_OPERAND_FLIGHT_STABILIZED_ROLL,                         // 26
-    LOGIC_CONDITION_OPERAND_FLIGHT_STABILIZED_PITCH,                        // 27
-    LOGIC_CONDITION_OPERAND_FLIGHT_STABILIZED_YAW,                          // 28
-    LOGIC_CONDITION_OPERAND_FLIGHT_WAYPOINT_INDEX,                          // 29
-    LOGIC_CONDITION_OPERAND_FLIGHT_WAYPOINT_ACTION,                         // 30
-    LOGIC_CONDITION_OPERAND_FLIGHT_3D_HOME_DISTANCE,                        // 31
-    LOGIC_CONDITION_OPERAND_FLIGHT_CRSF_LQ,                                 // 32
-    LOGIC_CONDITION_OPERAND_FLIGHT_CRSF_SNR,                                // 33
-    LOGIC_CONDITION_OPERAND_FLIGHT_GPS_VALID, // 0/1                        // 34
-
+    LOGIC_CONDITION_OPERAND_FLIGHT_IS_LANDING, // 0/1                       // 23
+    LOGIC_CONDITION_OPERAND_FLIGHT_IS_FAILSAFE, // 0/1                      // 24
+    LOGIC_CONDITION_OPERAND_FLIGHT_STABILIZED_ROLL,                         // 25
+    LOGIC_CONDITION_OPERAND_FLIGHT_STABILIZED_PITCH,                        // 26
+    LOGIC_CONDITION_OPERAND_FLIGHT_STABILIZED_YAW,                          // 27
+    LOGIC_CONDITION_OPERAND_FLIGHT_3D_HOME_DISTANCE,                        // 28
+    LOGIC_CONDITION_OPERAND_FLIGHT_LQ_UPLINK,                               // 29
+    LOGIC_CONDITION_OPERAND_FLIGHT_SNR,                                     // 39
+    LOGIC_CONDITION_OPERAND_FLIGHT_GPS_VALID, // 0/1                        // 31
+    LOGIC_CONDITION_OPERAND_FLIGHT_LOITER_RADIUS,                           // 32
+    LOGIC_CONDITION_OPERAND_FLIGHT_ACTIVE_PROFILE, //int                    // 33
+    LOGIC_CONDITION_OPERAND_FLIGHT_BATT_CELLS,                              // 34
+    LOGIC_CONDITION_OPERAND_FLIGHT_AGL_STATUS, //0,1,2                      // 35
+    LOGIC_CONDITION_OPERAND_FLIGHT_AGL, //0,1,2                             // 36
+    LOGIC_CONDITION_OPERAND_FLIGHT_RANGEFINDER_RAW, //int                   // 37
+    LOGIC_CONDITION_OPERAND_FLIGHT_ACTIVE_MIXER_PROFILE, //int              // 38
+    LOGIC_CONDITION_OPERAND_FLIGHT_MIXER_TRANSITION_ACTIVE, //0,1           // 39
+    LOGIC_CONDITION_OPERAND_FLIGHT_ATTITUDE_YAW, // deg                     // 40
+    LOGIC_CONDITION_OPERAND_FLIGHT_FW_LAND_STATE,                           // 41
+    LOGIC_CONDITION_OPERAND_FLIGHT_BATT_PROFILE, // int                     // 42
+    LOGIC_CONDITION_OPERAND_FLIGHT_FLOWN_LOITER_RADIUS,                     // 43
+    LOGIC_CONDITION_OPERAND_FLIGHT_LQ_DOWNLINK,                             // 44
+    LOGIC_CONDITION_OPERAND_FLIGHT_UPLINK_RSSI_DBM,                         // 45
+    LOGIC_CONDITION_OPERAND_FLIGHT_MIN_GROUND_SPEED, // m/s                 // 46
+    LOGIC_CONDITION_OPERAND_FLIGHT_HORIZONTAL_WIND_SPEED, // cm/s           // 47
+    LOGIC_CONDITION_OPERAND_FLIGHT_WIND_DIRECTION, // deg                   // 48
+    LOGIC_CONDITION_OPERAND_FLIGHT_RELATIVE_WIND_OFFSET, // deg             // 49
 } logicFlightOperands_e;
 
 typedef enum {
@@ -135,7 +166,30 @@ typedef enum {
     LOGIC_CONDITION_OPERAND_FLIGHT_MODE_AIR,                                // 8
     LOGIC_CONDITION_OPERAND_FLIGHT_MODE_USER1,                              // 9
     LOGIC_CONDITION_OPERAND_FLIGHT_MODE_USER2,                              // 10
+    LOGIC_CONDITION_OPERAND_FLIGHT_MODE_COURSE_HOLD,                        // 11
+    LOGIC_CONDITION_OPERAND_FLIGHT_MODE_USER3,                              // 12
+    LOGIC_CONDITION_OPERAND_FLIGHT_MODE_USER4,                              // 13
+    LOGIC_CONDITION_OPERAND_FLIGHT_MODE_ACRO,                               // 14
+    LOGIC_CONDITION_OPERAND_FLIGHT_MODE_WAYPOINT_MISSION,                   // 15
+    LOGIC_CONDITION_OPERAND_FLIGHT_MODE_ANGLEHOLD,                          // 16
 } logicFlightModeOperands_e;
+
+typedef enum {
+    LOGIC_CONDITION_OPERAND_WAYPOINTS_IS_WP, // 0/1                         // 0
+    LOGIC_CONDITION_OPERAND_WAYPOINTS_WAYPOINT_INDEX,                       // 1
+    LOGIC_CONDITION_OPERAND_WAYPOINTS_WAYPOINT_ACTION,                      // 2
+    LOGIC_CONDITION_OPERAND_WAYPOINTS_NEXT_WAYPOINT_ACTION,                 // 3
+    LOGIC_CONDITION_OPERAND_WAYPOINTS_WAYPOINT_DISTANCE,                    // 4
+    LOGIC_CONDTIION_OPERAND_WAYPOINTS_DISTANCE_FROM_WAYPOINT,               // 5
+    LOGIC_CONDITION_OPERAND_WAYPOINTS_USER1_ACTION,                         // 6
+    LOGIC_CONDITION_OPERAND_WAYPOINTS_USER2_ACTION,                         // 7
+    LOGIC_CONDITION_OPERAND_WAYPOINTS_USER3_ACTION,                         // 8
+    LOGIC_CONDITION_OPERAND_WAYPOINTS_USER4_ACTION,                         // 9
+    LOGIC_CONDITION_OPERAND_WAYPOINTS_USER1_ACTION_NEXT_WP,                 // 10
+    LOGIC_CONDITION_OPERAND_WAYPOINTS_USER2_ACTION_NEXT_WP,                 // 11
+    LOGIC_CONDITION_OPERAND_WAYPOINTS_USER3_ACTION_NEXT_WP,                 // 12
+    LOGIC_CONDITION_OPERAND_WAYPOINTS_USER4_ACTION_NEXT_WP,                 // 13
+} logicWaypointOperands_e;
 
 typedef enum {
     LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_ARMING_SAFETY = (1 << 0),
@@ -147,23 +201,30 @@ typedef enum {
     LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_THROTTLE = (1 << 6),
     LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_OSD_LAYOUT = (1 << 7),
     LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_RC_CHANNEL = (1 << 8),
+    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_LOITER_RADIUS = (1 << 9),
+    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_FLIGHT_AXIS = (1 << 10),
+#ifdef USE_GPS_FIX_ESTIMATION
+    LOGIC_CONDITION_GLOBAL_FLAG_DISABLE_GPS_FIX = (1 << 11),
+#endif
+    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_MIN_GROUND_SPEED = (1 << 12),
 } logicConditionsGlobalFlags_t;
 
 typedef enum {
-    LOGIC_CONDITION_FLAG_LATCH      = 1 << 0,
+    LOGIC_CONDITION_FLAG_LATCH              = 1 << 0,
+    LOGIC_CONDITION_FLAG_TIMEOUT_SATISFIED  = 1 << 1,
 } logicConditionFlags_e;
 
 typedef struct logicOperand_s {
-    logicOperandType_e type;
     int32_t value;
+    logicOperandType_e type;
 } logicOperand_t;
 
 typedef struct logicCondition_s {
+    logicOperand_t operandA;
+    logicOperand_t operandB;
     uint8_t enabled;
     int8_t activatorId;
     logicOperation_e operation;
-    logicOperand_t operandA;
-    logicOperand_t operandB;
     uint8_t flags;
 } logicCondition_t;
 
@@ -171,13 +232,22 @@ PG_DECLARE_ARRAY(logicCondition_t, MAX_LOGIC_CONDITIONS, logicConditions);
 
 typedef struct logicConditionState_s {
     int value;
+    int32_t lastValue;
     uint8_t flags;
+    timeMs_t timeout;
 } logicConditionState_t;
 
 typedef struct rcChannelOverride_s {
-    uint8_t active;
     int value;
+    uint8_t active;
 } rcChannelOverride_t;
+
+typedef struct flightAxisOverride_s {
+    int angleTarget;
+    int rateTarget;
+    uint8_t rateTargetActive;
+    uint8_t angleTargetActive;
+} flightAxisOverride_t;
 
 extern int logicConditionValuesByType[LOGIC_CONDITION_LAST];
 extern uint64_t logicConditionsGlobalFlags;
@@ -188,12 +258,18 @@ extern uint64_t logicConditionsGlobalFlags;
 
 void logicConditionProcess(uint8_t i);
 
-int logicConditionGetOperandValue(logicOperandType_e type, int operand);
+int32_t logicConditionGetOperandValue(logicOperandType_e type, int operand);
 
-int logicConditionGetValue(int8_t conditionId);
+int32_t logicConditionGetValue(int8_t conditionId);
 void logicConditionUpdateTask(timeUs_t currentTimeUs);
 void logicConditionReset(void);
 
 float getThrottleScale(float globalThrottleScale);
 int16_t getRcCommandOverride(int16_t command[], uint8_t axis);
 int16_t getRcChannelOverride(uint8_t channel, int16_t originalValue);
+uint32_t getLoiterRadius(uint32_t loiterRadius);
+uint32_t getMinGroundSpeed(uint32_t minGroundSpeed);
+float getFlightAxisAngleOverride(uint8_t axis, float angle);
+float getFlightAxisRateOverride(uint8_t axis, float rate);
+bool isFlightAxisAngleOverrideActive(uint8_t axis);
+bool isFlightAxisRateOverrideActive(uint8_t axis);

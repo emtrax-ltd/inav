@@ -51,11 +51,14 @@ typedef uint32_t timeUs_t;
 #define USECS_PER_SEC (1000 * 1000)
 
 #define HZ2US(hz)   (1000000 / (hz))
+#define HZ2MS(hz)   (1000 / (hz))
 #define US2S(us)    ((us) * 1e-6f)
 #define US2MS(us)   ((us) * 1e-3f)
 #define MS2US(ms)   ((ms) * 1000)
 #define MS2S(ms)    ((ms) * 1e-3f)
-#define HZ2S(hz)    US2S(HZ2US(hz))
+#define S2MS(s)     ((s) * MILLISECS_PER_SEC)
+#define DS2MS(ds)   ((ds) * 100)
+#define HZ2S(hz)    (1.0f / (hz))
 
 // Use this function only to get small deltas (difference overflows at ~35 minutes)
 static inline timeDelta_t cmpTimeUs(timeUs_t a, timeUs_t b) { return (timeDelta_t)(a - b); }

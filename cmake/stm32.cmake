@@ -1,5 +1,4 @@
 include(stm32-bootloader)
-include(stm32f3)
 include(stm32f4)
 include(stm32f7)
 include(stm32h7)
@@ -17,7 +16,10 @@ set(CMSIS_DSP_DIR "${MAIN_LIB_DIR}/main/CMSIS/DSP")
 set(CMSIS_DSP_INCLUDE_DIR "${CMSIS_DSP_DIR}/Include")
 
 set(CMSIS_DSP_SRC
+    BasicMathFunctions/arm_scale_f32.c
+    BasicMathFunctions/arm_sub_f32.c
     BasicMathFunctions/arm_mult_f32.c
+    BasicMathFunctions/arm_offset_f32.c
     TransformFunctions/arm_rfft_fast_f32.c
     TransformFunctions/arm_cfft_f32.c
     TransformFunctions/arm_rfft_fast_init_f32.c
@@ -26,6 +28,9 @@ set(CMSIS_DSP_SRC
     CommonTables/arm_common_tables.c
     ComplexMathFunctions/arm_cmplx_mag_f32.c
     StatisticsFunctions/arm_max_f32.c
+    StatisticsFunctions/arm_rms_f32.c
+    StatisticsFunctions/arm_std_f32.c
+    StatisticsFunctions/arm_mean_f32.c
 )
 list(TRANSFORM CMSIS_DSP_SRC PREPEND "${CMSIS_DSP_DIR}/Source/")
 
@@ -189,7 +194,7 @@ endfunction()
 
 function(add_hex_target name exe hex)
     add_custom_target(${name} ALL
-        cmake -E env PATH=$ENV{PATH}
+        cmake -E env PATH="$ENV{PATH}"
         # TODO: Overriding the start address with --set-start 0x08000000
         # seems to be required due to some incorrect assumptions about .hex
         # files in the configurator. Verify wether that's the case and fix
@@ -201,7 +206,7 @@ endfunction()
 
 function(add_bin_target name exe bin)
     add_custom_target(${name}
-        cmake -E env PATH=$ENV{PATH}
+        cmake -E env PATH="$ENV{PATH}"
         ${CMAKE_OBJCOPY} -Obinary $<TARGET_FILE:${exe}> ${bin}
         BYPRODUCTS ${bin}
     )
@@ -280,7 +285,7 @@ function(target_stm32)
     cmake_parse_arguments(
         args
         # Boolean arguments
-        "DISABLE_MSC;BOOTLOADER"
+        "DISABLE_MSC;BOOTLOADER;NO_BOOTLOADER"
         # Single value arguments
         "HSE_MHZ;LINKER_SCRIPT;NAME;OPENOCD_TARGET;OPTIMIZATION;STARTUP;SVD"
         # Multi-value arguments
@@ -332,6 +337,11 @@ function(target_stm32)
 
     math(EXPR hse_value "${hse_mhz} * 1000000")
     list(APPEND target_definitions "HSE_VALUE=${hse_value}")
+
+    if (MSP_UART) 
+        list(APPEND target_definitions "MSP_UART=${MSP_UART}")
+    endif()
+
     if(args_COMPILE_DEFINITIONS)
         list(APPEND target_definitions ${args_COMPILE_DEFINITIONS})
     endif()
@@ -367,7 +377,7 @@ function(target_stm32)
 
     setup_firmware_target(${main_target_name} ${name} ${ARGN})
 
-    if(args_BOOTLOADER)
+    if(args_BOOTLOADER AND NOT args_NO_BOOTLOADER)
         # Bootloader for the target
         set(bl_suffix _bl)
         add_stm32_executable(

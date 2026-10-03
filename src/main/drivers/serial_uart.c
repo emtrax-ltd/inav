@@ -36,7 +36,7 @@
 #include "serial_uart_impl.h"
 
 static void usartConfigurePinInversion(uartPort_t *uartPort) {
-#if !defined(USE_UART_INVERTER) && !defined(STM32F303xC) && !defined(STM32F7)
+#if !defined(USE_UART_INVERTER) && !defined(STM32F7)
     UNUSED(uartPort);
 #else
     bool inverted = uartPort->port.options & SERIAL_INVERTED;
@@ -52,18 +52,6 @@ static void usartConfigurePinInversion(uartPort_t *uartPort) {
     uartInverterSet(uartPort->USARTx, invertedLines, inverted);
 #endif
 
-#ifdef STM32F303xC
-    uint32_t inversionPins = 0;
-
-    if (uartPort->port.mode & MODE_TX) {
-        inversionPins |= USART_InvPin_Tx;
-    }
-    if (uartPort->port.mode & MODE_RX) {
-        inversionPins |= USART_InvPin_Rx;
-    }
-
-    USART_InvPinCmd(uartPort->USARTx, inversionPins, inverted ? ENABLE : DISABLE);
-#endif
 #endif
 }
 
@@ -187,6 +175,13 @@ void uartSetMode(serialPort_t *instance, portMode_t mode)
     uartReconfigure(uartPort);
 }
 
+void uartSetOptions(serialPort_t *instance, portOptions_t options)
+{
+    uartPort_t *uartPort = (uartPort_t *)instance;
+    uartPort->port.options = options;
+    uartReconfigure(uartPort);
+}
+
 uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
 {
     const uartPort_t *s = (const uartPort_t*)instance;
@@ -267,6 +262,7 @@ const struct serialPortVTable uartVTable[] = {
         .serialSetBaudRate = uartSetBaudRate,
         .isSerialTransmitBufferEmpty = isUartTransmitBufferEmpty,
         .setMode = uartSetMode,
+        .setOptions = uartSetOptions,
         .isConnected = NULL,
         .writeBuf = NULL,
         .beginWrite = NULL,

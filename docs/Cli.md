@@ -22,22 +22,24 @@ See the other documentation sections for details of the cli commands and setting
 
 ## Backup via CLI
 
+> **Note:** The INAV Configurator now performs automatic backups before flashing and can restore settings afterwards, including migration across major versions. See [Backup and Restore](Backup%20and%20Restore.md) for details. The CLI method below remains available for manual backup.
+
 Disconnect main power, connect to cli via USB/FTDI.
 
 dump using cli
 
 ```
-profile 0
+control_profile 0
 dump
 ```
 
-dump profiles using cli if you use them
+dump control_profiles using cli if you use them
 
 ```
-profile 1
-dump profile
-profile 2
-dump profile
+control_profile 1
+dump control_profile
+control_profile 2
+dump control_profile
 ```
 
 copy screen output to a file and save it.
@@ -57,43 +59,72 @@ To perform the restore simply paste the saved commands in the Configurator CLI t
 
 After restoring it's always a good idea to `dump` or `diff` the settings once again and compare the output with previous one to verify if everything is set as it should be.
 
+## Flight Controller opereration while connected to the CLI
+
+While connected to the CLI, all Logical Switches are temporarily disabled (5.1.0 onwards).
 
 ## CLI Command Reference
 
-| `Command`        | Description                                    |
-|------------------|------------------------------------------------|
-| `1wire <esc>`    | passthrough 1wire to the specified esc         |
-| `adjrange`       | show/set adjustment ranges settings            |
-| `aux`            | show/set aux settings                          |
-| `beeper`         | show/set beeper (buzzer) [usage](Buzzer.md)    |
-| `bind_rx`        | Initiate binding for RX_SPI or SRXL2 receivers |
-| `mmix`           | design custom motor mixer                      |
-| `smix`           | design custom servo mixer                      |
-| `color`          | configure colors                               |
-| `defaults`       | reset to defaults and reboot                   |
-| `dump`           | print configurable settings in a pastable form |
-| `diff`           | print only settings that have been modified    |
-| `exit`           |                                                |
-| `feature`        | list or -val or val                            |
-| `get`            | get variable value                             |
-| `gpspassthrough` | passthrough gps to serial                      |
-| `help`           |                                                |
-| `led`            | configure leds                                 |
-| `map`            | mapping of rc channel order                    |
-| `motor`          | get/set motor output value                     |
-| `msc`            | Enter USB Mass storage mode. See [USB MSC documentation](USB_Mass_Storage_(MSC)_mode.md) for usage information.|
-| `play_sound`     | index, or none for next                        |
-| `profile`        | index (0 to 2)                                 |
-| `rxrange`        | configure rx channel ranges (end-points) |
-| `safehome`      | Define safe home locations. See the [safehome documentation](Safehomes.md) for usage information. |
-| `save`           | save and reboot                                |
-| `serial`         | Configure serial ports                         |
-| `serialpassthrough <id> <baud> <mode>`| where `id` is the zero based port index, `baud` is a standard baud rate, and mode is `rx`, `tx`, or both (`rxtx`) |
-| `set`            | name=value or blank or * for list              |
-| `status`         | show system status                             |
-| `temp_sensor`    | list or configure temperature sensor(s). See [temperature sensors documentation](Temperature sensors.md) for more information. |
-| `wp`             | list or configure waypoints. See more in the [navigation documentation](Navigation.md#cli-command-wp-to-manage-waypoints). |
-| `version`        | Displays version information,                  |
+| `Command` | Description |
+|-----------| ----------- |
+| `adjrange` | Configure adjustment ranges |
+| `assert` |  |
+| `aux` | Configure modes |
+| `batch` | Start or end a batch of commands |
+| `battery_profile` | Change battery profile |
+| `beeper` | Show/set beeper (buzzer) [usage](Buzzer.md) |
+| `bind_msp_rx` | Initiate binding for MSP receivers (mLRS) |
+| `bind_rx` | Initiate binding for SRXL2 or CRSF receivers |
+| `blackbox` | Configure blackbox fields |
+| `bootlog` | Show init logs from [serial_printf_debugging](./development/serial_printf_debugging.md) |
+| `color` | Configure colors |
+| `defaults` | Reset to defaults and reboot |
+| `dfu` | DFU mode on reboot |
+| `diff` | List configuration changes from default |
+| `dump` | Dump configuration |
+| `exit` |  |
+| `feature` | List or enable <val> or disable <-val> |
+| `flash_erase` | Erase flash chip |
+| `flash_info` | Show flash chip info |
+| `flash_read` |  |
+| `flash_write` |  |
+| `get` | Get variable value |
+| `gpspassthrough` | Passthrough gps to serial |
+| `gvar` | Configure global variables |
+| `help` | Displays CLI help and command parameters / options |
+| `led` | Configure leds |
+| `logic` | Configure logic conditions |
+| `map` | Configure rc channel order |
+| `memory` | View memory usage |
+| `mmix` | Custom motor mixer |
+| `mode_color` | Configure mode and special colors |
+| `motor` | Get/set motor |
+| `msc` | Enter USB Mass storage mode. See [USB MSC documentation](USB_Mass_Storage_(MSC)_mode.md) for usage information. |
+| `osd_layout` | Get or set the layout of OSD items |
+| `pid` | Configurable PID controllers |
+| `play_sound` | `<index>`, or none for next item |
+| `control_profile` | Change profile |
+| `resource` | View currently used resources |
+| `rxrange` | Configure rx channel ranges |
+| `safehome` | Define safe home locations. See the [safehome documentation](Safehomes.md) for usage information. |
+| `save` | Save and reboot |
+| `sd_info` | Sdcard info |
+| `serial` | Configure serial ports. [Usage](Serial.md) |
+| `serialpassthrough` | Passthrough serial data to port, with `<id> <baud> <mode> <options>`, where `id` is the zero based port index, `baud` is a standard baud rate, mode is `rx`, `tx`, or both (`rxtx`), and options is a short string like `8N1` or `8E2` |
+| `servo` | Configure servos |
+| `set` | Change setting with name=value or blank or * for list |
+| `smix` | Custom servo mixer |
+| `status` | Show status. Error codes can be looked up [here](https://github.com/iNavFlight/inav/wiki/%22Something%22-is-disabled----Reasons) |
+| `tasks` | Show task stats |
+| `temp_sensor` | List or configure temperature sensor(s). See [temperature sensors documentation](Temperature-sensors.md) for more information. |
+|  `timer_output_mode`  | Override automatic timer /  pwm function allocation. [Additional Information](#timer_outout_mode)|
+| `version` | Show version |
+| `wp` | List or configure waypoints. See the [navigation documentation](Navigation.md#cli-command-wp-to-manage-waypoints). |
+
+Notes:
+
+* Available commands depend upon hardware specific and debug build options. Not all commands are available in every FC.
+* The above list shows the output available in the CLI `help` command. This may also show additional information.
 
 ### serial
 
@@ -121,6 +152,16 @@ A shorter form is also supported to enable and disable a single function using `
 | LOG                   | 15            | 32768 |
 | RANGEFINDER           | 16            | 65536 |
 | VTX_FFPV              | 17            | 131072 |
+| ESCSERIAL             | 18            | 262144 |
+| TELEMETRY_SIM         | 19            | 524288 |
+| FRSKY_OSD             | 20            | 1048576 |
+| DJI_HD_OSD            | 21            | 2097152 |
+| SERVO_SERIAL          | 22            | 4194304 |
+| TELEMETRY_SMARTPORT_MASTER | 23       | 8388608 |
+| UNUSED                | 24            | 16777216 |
+| MSP_DISPLAYPORT       | 25            | 33554432 |
+| GIMBAL_SERIAL         | 26            | 67108864 |
+| HEADTRACKER_SERIAL    | 27            | 134217728 |
 
 Thus, to enable MSP and LTM on a port, one would use the function **value** of 17 (1 << 0)+(1<<4), aka 1+16, aka 17.
 
@@ -134,6 +175,66 @@ serial 0 -4
 ```
 
 `serial` can also be used without any argument to print the current configuration of all the serial ports.
+
+### `timer_output_mode`
+
+Since INAV 7, the firmware can dynamically allocate servo and motor outputs. This removes the need for bespoke targets for special cases (e.g. `MATEKF405` and `MATEKF405_SERVOS6`).
+
+#### Syntax
+
+```
+timer_output_mode [timer [function]]
+```
+where:
+* Without parameters, lists the current timers and modes
+* With just a `timer` lists the mode for that timer
+* With both `timer` and `function`, sets the function for that timers
+
+Note:
+
+* `timer` identifies the timer **index** (from 0); thus is one less than the corresponding `TIMn` definition in a target's `target.c`.
+* The function is one of `AUTO` (the default), `MOTORS` or `SERVOS`.
+
+Motors are allocated first, hence having a servo before a motor may require use of `timer_output_mode`.
+
+#### Example
+
+The original `MATEKF405` target defined a multi-rotor (MR) servo on output S1. The later `MATEKF405_SERVOS6` target defined (for MR) S1 as a motor and S6 as a servo. This was more logical, but annoying for anyone who had a legacy `MATEKF405` tricopter with the servo on S1.
+
+#### Solution
+
+There is now a single `MATEKF405` target. The `target.c` sets the relevant  outputs as:
+
+```
+DEF_TIM(TIM3, CH1, PC6,  TIM_USE_OUTPUT_AUTO, 0, 0), // S1
+DEF_TIM(TIM8, CH2, PC7,  TIM_USE_OUTPUT_AUTO, 0, 1), // S2  UP(2,1)
+DEF_TIM(TIM8, CH3, PC8,  TIM_USE_OUTPUT_AUTO, 0, 1), // S3  UP(2,1)
+DEF_TIM(TIM8, CH4, PC9,  TIM_USE_OUTPUT_AUTO, 0, 0), // S4  UP(2,1)
+DEF_TIM(TIM2, CH1, PA15, TIM_USE_MC_MOTOR | TIM_USE_LED, 0, 0), // S5  UP(1,7)
+DEF_TIM(TIM1, CH1, PA8,  TIM_USE_OUTPUT_AUTO, 0, 0), // S6  UP(2,5)
+DEF_TIM(TIM4, CH3, PB8,  TIM_USE_OUTPUT_AUTO, 0, 0), // S7  D(1,7)!S5 UP(2,6)
+```
+
+Using the "motors first" allocation, the servo would end up on S6, which in the legacy "tricopter servo on S1" case is not desired.
+
+Forcing the S1 output (`TIM3`) to servo is achieved by:
+
+```
+timer_output_mode 2 SERVOS
+```
+
+with resulting `resource` output:
+
+```
+C06: SERVO4 OUT
+C07: MOTOR1 OUT
+C08: MOTOR2 OUT
+C09: MOTOR3 OUT
+```
+
+Note that the `timer` **index** in the `timer_output_mode` line is one less than the mnemonic in `target.c`, `timer` of 2 for `TIM3`.
+
+Note that the usual caveat that one should not share a timer with both a motor and a servo still apply.
 
 ## Flash chip management
 

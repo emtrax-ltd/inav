@@ -26,17 +26,14 @@
 
 #define BEEPER                  NONE
 
-#define USE_EXTI
 #define BMI160_SPI_BUS          BUS_SPI3
 #define BMI160_CS_PIN           PB4
-#define GYRO_EXTI_PIN           PC13
 
 #define USE_IMU_BMI160
 #define IMU_BMI160_ALIGN        CW0_DEG
 
 // #define USE_MAG
 // #define MAG_I2C_BUS             BUS_I2C1
-// #define MAG_HMC5883_ALIGN       CW90_DEG
 // #define USE_MAG_HMC5883
 // #define USE_MAG_QMC5883
 // #define USE_MAG_IST8310

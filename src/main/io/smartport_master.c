@@ -1,18 +1,18 @@
 /*
- * This file is part of iNav.
+ * This file is part of INAV.
  *
- * iNav is free software: you can redistribute it and/or modify
+ * INAV is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * iNav is distributed in the hope that it will be useful,
+ * INAV is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with iNav.  If not, see <http://www.gnu.org/licenses/>.
+ * along with INAV.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -20,7 +20,6 @@
 #include <string.h>
 
 #include "platform.h"
-FILE_COMPILE_FOR_SPEED
 
 #if defined(USE_SMARTPORT_MASTER)
 
@@ -99,7 +98,7 @@ enum
 #define SMARTPORT_BYTESTUFFING_MARKER 0x7D
 #define SMARTPORT_BYTESTUFFING_XOR_VALUE 0x20
 
-#define SMARTPORT_SENSOR_DATA_TIMEOUT 500 // ms
+#define SMARTPORT_SENSOR_DATA_TIMEOUT (500*1000) // us
 
 #define SMARTPORT_FORWARD_REQUESTS_MAX 10
 
@@ -129,6 +128,10 @@ typedef struct {
     timeUs_t altitudeTimestamp;
     int16_t vario;
     timeUs_t varioTimestamp;
+    int16_t current;
+    timeUs_t currentTimestamp;
+    int16_t voltage;
+    timeUs_t voltageTimestamp;
 } smartportSensorsData_t;
 
 typedef struct {
@@ -358,11 +361,6 @@ static void decodeCellsData(uint32_t sdata)
         cd->count = count;
         cd->voltage[voltageStartIndex] = voltage1;
         cd->voltage[voltageStartIndex+1] = voltage2;
-
-        DEBUG_SET(DEBUG_SPM_CELLS, 0, cd->count);
-        for (uint8_t i = 0; i < 6; ++i) {
-            DEBUG_SET(DEBUG_SPM_CELLS, i+1, cd->voltage[i]);
-        }
     }
 }
 
@@ -372,22 +370,27 @@ static void decodeVS600Data(uint32_t sdata)
     vs600->power = (sdata >> 8) & 0xFF;
     vs600->band = (sdata >> 16) & 0xFF;
     vs600->channel = (sdata >> 24) & 0xFF;
-    DEBUG_SET(DEBUG_SPM_VS600, 0, sdata);
-    DEBUG_SET(DEBUG_SPM_VS600, 1, vs600->channel);
-    DEBUG_SET(DEBUG_SPM_VS600, 2, vs600->band);
-    DEBUG_SET(DEBUG_SPM_VS600, 3, vs600->power);
 }
 
 static void decodeAltitudeData(uint32_t sdata)
 {
     sensorsData.altitude = sdata * 5; // cm
-    DEBUG_SET(DEBUG_SPM_VARIO, 0, sensorsData.altitude);
 }
 
 static void decodeVarioData(uint32_t sdata)
 {
     sensorsData.vario = sdata * 2; // mm/s
-    DEBUG_SET(DEBUG_SPM_VARIO, 1, sensorsData.vario);
+}
+
+static void decodeCurrentData(uint32_t sdata)
+{
+    // data comes in 100mA steps
+    sensorsData.current = ((int16_t)sdata) * 10;
+}
+
+static void decodeVoltageData(uint32_t sdata)
+{
+    sensorsData.voltage = (int16_t)sdata;
 }
 
 static void processSensorPayload(smartPortPayload_t *payload, timeUs_t currentTimeUs)
@@ -411,6 +414,16 @@ static void processSensorPayload(smartPortPayload_t *payload, timeUs_t currentTi
         case DATAID_VARIO:
             decodeVarioData(payload->data);
             sensorsData.varioTimestamp = currentTimeUs;
+            break;
+
+        case DATAID_CURRENT:
+            decodeCurrentData(payload->data);
+            sensorsData.currentTimestamp = currentTimeUs;
+            break;
+
+        case DATAID_VFAS:
+            decodeVoltageData(payload->data);
+            sensorsData.voltageTimestamp = currentTimeUs;
             break;
     }
     sensorPayloadCache[currentPolledPhyID] = *payload;
@@ -578,6 +591,24 @@ vs600Data_t *smartportMasterGetVS600Data(void)
     }
 
     return &sensorsData.vs600;
+}
+
+int16_t *smartportMasterGetCurrentData(void)
+{
+    if (micros() - sensorsData.currentTimestamp > SMARTPORT_SENSOR_DATA_TIMEOUT) {
+        return NULL;
+    }
+
+    return &sensorsData.current;
+}
+
+int16_t *smartportMasterGetVoltageData(void)
+{
+    if (micros() - sensorsData.voltageTimestamp > SMARTPORT_SENSOR_DATA_TIMEOUT) {
+        return NULL;
+    }
+
+    return &sensorsData.voltage;
 }
 
 bool smartportMasterPhyIDIsActive(uint8_t phyID)

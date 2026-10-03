@@ -51,22 +51,17 @@ bool isMPUSoftReset(void)
         return false;
 }
 
-#define SYSMEMBOOT_VECTOR_TABLE ((uint32_t *)0x1ff09800)
 uint32_t systemBootloaderAddress(void)
 {
-    return SYSMEMBOOT_VECTOR_TABLE[1];
-}
-
-void systemClockSetup(uint8_t cpuUnderclock)
-{
-    (void)cpuUnderclock;
-    // This is a stub
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx)
+    return 0x1ff09800;
+#else
+#error Unknown MCU
+#endif
 }
 
 void systemInit(void)
 {
-    checkForBootLoaderRequest();
-
     // Configure NVIC preempt/priority groups
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
 

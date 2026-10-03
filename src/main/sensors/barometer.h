@@ -32,9 +32,10 @@ typedef enum {
     BARO_SPL06  = 7,
     BARO_BMP388 = 8,
     BARO_DPS310 = 9,
-    BARO_MSP    = 10,
-    BARO_FAKE   = 11,
-    BARO_MAX = BARO_FAKE
+    BARO_B2SMPB = 10,
+    BARO_MSP    = 11,
+    BARO_FAKE   = 12,
+    BARO_MAX    = BARO_FAKE
 } baroSensor_e;
 
 typedef struct baro_s {
@@ -50,12 +51,11 @@ extern baro_t baro;
 
 typedef struct barometerConfig_s {
     uint8_t baro_hardware;                  // Barometer hardware to use
-    uint8_t use_median_filtering;           // Use 3-point median filtering
     uint16_t baro_calibration_tolerance;    // Baro calibration tolerance (cm at sea level)
+    float baro_temp_correction;             // Baro temperature correction value (cm/K)
 } barometerConfig_t;
 
 PG_DECLARE(barometerConfig_t, barometerConfig);
-
 
 bool baroInit(void);
 bool baroIsCalibrationComplete(void);
@@ -65,5 +65,9 @@ int32_t baroCalculateAltitude(void);
 int32_t baroGetLatestAltitude(void);
 int16_t baroGetTemperature(void);
 bool baroIsHealthy(void);
+
+#if defined(SITL_BUILD)
+float altitudeToPressure(const float altCm);
+#endif
 
 #endif

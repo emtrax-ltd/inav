@@ -39,11 +39,6 @@
 #define MPU6000_CS_PIN          PC4
 #define MPU6000_SPI_BUS         BUS_SPI1
 
-#define USE_EXTI
-#define GYRO_INT_EXTI            PA4
-#define USE_MPU_DATA_READY_SIGNAL
-
-
 // *************** I2C/Baro/Mag *********************
 #define USE_I2C
 #define USE_I2C_DEVICE_1
@@ -58,15 +53,9 @@
 
 #define USE_MAG
 #define MAG_I2C_BUS             BUS_I2C1
-#define USE_MAG_HMC5883
-#define USE_MAG_QMC5883
-#define USE_MAG_IST8310
-#define USE_MAG_IST8308
-#define USE_MAG_MAG3110
-#define USE_MAG_LIS3MDL
+#define USE_MAG_ALL
 
 #define TEMPERATURE_I2C_BUS     BUS_I2C1
-#define BNO055_I2C_BUS          BUS_I2C1
 #define PITOT_I2C_BUS           BUS_I2C1
 
 // *************** SPI2 Flash ***********************
@@ -87,7 +76,6 @@
 #define SPI3_MISO_PIN           PB4
 #define SPI3_MOSI_PIN           PB5
 
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_BUS         BUS_SPI3
 #define MAX7456_CS_PIN          PD2
@@ -151,4 +139,3 @@
 #define MAX_PWM_OUTPUT_PORTS        5
 #define USE_DSHOT
 #define USE_ESC_SENSOR
-#define USE_SERIALSHOT

@@ -29,11 +29,6 @@
 
 #define USE_DSHOT
 
-// MPU interrupt
-#define USE_EXTI
-#define GYRO_INT_EXTI            PC4
-#define USE_MPU_DATA_READY_SIGNAL
-
 #define MPU9250_CS_PIN          PC0
 #define MPU9250_SPI_BUS         BUS_SPI3
 
@@ -42,14 +37,13 @@
 
 #define USE_MAG
 #define USE_MAG_MPU9250
-#define MAG_MPU9250_ALIGN       CW90_DEG_FLIP
+#define MAG_I2C_BUS            BUS_I2C1
 
 #define USE_BARO
 #define USE_BARO_BMP280
 #define BMP280_CS_PIN           PC5
 #define BMP280_SPI_BUS          BUS_SPI3
 
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_CS_PIN          PA4
 #define MAX7456_SPI_BUS         BUS_SPI1
@@ -127,7 +121,6 @@
 #define PITOT_I2C_BUS           BUS_I2C1
 
 #define TEMPERATURE_I2C_BUS     BUS_I2C1
-#define BNO055_I2C_BUS          BUS_I2C1
 
 #define DEFAULT_FEATURES        (FEATURE_TX_PROF_SEL | FEATURE_VBAT | FEATURE_CURRENT_METER | FEATURE_OSD | FEATURE_GPS | FEATURE_TELEMETRY)
 

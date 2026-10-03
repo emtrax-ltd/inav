@@ -122,16 +122,8 @@ static uint8_t simModuleState = SIM_MODULE_NOT_DETECTED;
 static int simRssi;
 static uint8_t accEvent = ACC_EVENT_NONE;
 static char* accEventDescriptions[] = { "", "HIT! ", "DROP ", "HIT " };
-static char* modeDescriptions[] = { "MAN", "ACR", "AIR", "ANG", "HOR", "ALH", "POS", "RTH", "WP", "CRS", "LAU", "FS" };
+static char* modeDescriptions[] = { "MAN", "ACR", "AIR", "ANG", "HOR", "ALH", "POS", "RTH", "WP", "CRS", "LAU", "FS", "ANH" };
 static const char gpsFixIndicators[] = { '!', '*', ' ' };
-
-
-// XXX UNUSED
-#if 0
-static bool isGroundStationNumberDefined(void) {
-    return telemetryConfig()->simGroundStationNumber[0] != '\0';
-}
-#endif
 
 static bool checkGroundStationNumber(uint8_t* rv)
 {
@@ -280,7 +272,7 @@ static void readSimResponse(void)
             simModuleState = SIM_MODULE_REGISTERED;
         } else {
             simModuleState = SIM_MODULE_NOT_REGISTERED;
-        }        
+        }
     } else if (responseCode == SIM_RESPONSE_CODE_CMT) {
         // +CMT: <oa>,[<alpha>],<scts>[,<tooa>,<fo>,<pid>,<dcs>,<sca>,<tosca>,<length>]<CR><LF><data>
         // +CMT: "+3581234567","","19/02/12,14:57:24+08"
@@ -295,11 +287,7 @@ static void readSimResponse(void)
 
 static int16_t getAltitudeMeters(void)
 {
-#if defined(USE_NAV)
     return getEstimatedActualPosition(Z) / 100;
-#else
-    return sensors(SENSOR_GPS) ? gpsSol.llh.alt / 100 : 0;
-#endif
 }
 
 static void transmit(void)
@@ -358,9 +346,13 @@ static void sendSMS(void)
     uint16_t avgSpeed = lrintf(10 * calculateAverageSpeed());
     uint32_t now = millis();
 
-    memset(pluscode_url, 0, sizeof(pluscode_url));
+    ZERO_FARRAY(pluscode_url);
 
-    if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
+    if ((sensors(SENSOR_GPS) && STATE(GPS_FIX))
+#ifdef USE_GPS_FIX_ESTIMATION
+            || STATE(GPS_ESTIMATED_FIX)
+#endif
+        ) {
         groundSpeed = gpsSol.groundSpeed / 100;
 
         char buf[20];
@@ -387,8 +379,8 @@ static void sendSMS(void)
         amps / 10, amps % 10,
         getAltitudeMeters(),
         groundSpeed, avgSpeed / 10, avgSpeed % 10,
-        GPS_distanceToHome, getTotalTravelDistance() / 100,
-        DECIDEGREES_TO_DEGREES(attitude.values.yaw),
+        (unsigned long)GPS_distanceToHome, getTotalTravelDistance() / 100ul,
+        (int)DECIDEGREES_TO_DEGREES(attitude.values.yaw),
         gpsSol.numSat, gpsFixIndicators[gpsSol.fixType],
         simRssi,
         getStateOfForcedRTH() == RTH_IDLE ? modeDescriptions[getFlightModeForTelemetry()] : "RTH",
@@ -400,7 +392,7 @@ static void sendSMS(void)
     atCommandStatus = SIM_AT_WAITING_FOR_RESPONSE;
 }
 
-void handleSimTelemetry()
+void handleSimTelemetry(void)
 {
     static uint16_t simResponseIndex = 0;
     uint32_t now = millis();
@@ -443,7 +435,7 @@ void handleSimTelemetry()
         break;
         case SIM_STATE_INIT_ENTER_PIN:
         sendATCommand("AT+CPIN=");
-        sendATCommand((char*)telemetryConfig()->simPin);        
+        sendATCommand((char*)telemetryConfig()->simPin);
         sendATCommand("\r");
         simTelemetryState = SIM_STATE_SET_MODES;
         break;
@@ -468,16 +460,6 @@ void handleSimTelemetry()
         break;
     }
 }
-
-// XXX UNUSED
-#if 0
-static void freeSimTelemetryPort(void)
-{
-    closeSerialPort(simPort);
-    simPort = NULL;
-    simEnabled = false;
-}
-#endif
 
 void initSimTelemetry(void)
 {

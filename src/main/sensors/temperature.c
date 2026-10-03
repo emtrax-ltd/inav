@@ -98,7 +98,7 @@ static void newSensorCheckAndEnter(uint8_t type, uint64_t addr)
 
 void temperatureInit(void)
 {
-    memset(sensorStatus, 0, sizeof(sensorStatus) * sizeof(*sensorStatus));
+    memset(sensorStatus, 0, sizeof(sensorStatus));
 
     sensorsSet(SENSOR_TEMP);
 
@@ -163,7 +163,7 @@ void tempSensorAddressToString(uint64_t address, char *hex_address)
         tfp_sprintf(hex_address, "%d", (int)address);
     else {
         uint32_t *address32 = (uint32_t *)&address;
-        tfp_sprintf(hex_address, "%08lx%08lx", address32[1], address32[0]);
+        tfp_sprintf(hex_address, "%08lx%08lx", (unsigned long)address32[1], (unsigned long)address32[0]);
     }
 }
 

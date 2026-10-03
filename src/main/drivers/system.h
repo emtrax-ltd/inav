@@ -21,7 +21,6 @@
 #include <stdbool.h>
 
 void systemInit(void);
-void systemClockSetup(uint8_t cpuUnderclock);
 
 typedef enum {
     FAILURE_DEVELOPER = 0,
@@ -30,7 +29,8 @@ typedef enum {
     FAILURE_ACC_INCOMPATIBLE,
     FAILURE_INVALID_EEPROM_CONTENTS,
     FAILURE_FLASH_WRITE_FAILED,
-    FAILURE_GYRO_INIT_FAILED
+    FAILURE_GYRO_INIT_FAILED,
+    FAILURE_FLASH_READ_FAILED,
 } failureMode_e;
 
 // failure

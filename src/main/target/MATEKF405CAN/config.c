@@ -20,12 +20,18 @@
 #include "config/config_master.h"
 #include "config/feature.h"
 #include "io/serial.h"
+#include "sensors/compass.h"
+#include "fc/config.h"
+#include "drivers/pwm_mapping.h"
 
 
 void targetConfiguration(void)
 {
-
+    compassConfigMutable()->mag_align = CW0_DEG_FLIP;
     serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIAL_PORT_USART4)].functionMask = FUNCTION_GPS;
     // serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIAL_PORT_USART4)].gps_baudrateIndex = BAUD_115200;
+    beeperConfigMutable()->pwmMode = true;
 
+    // To improve backwards compatibility with INAV versions 6.x and older
+    timerOverridesMutable(timer2id(TIM4))->outputMode = OUTPUT_MODE_MOTORS;
 }

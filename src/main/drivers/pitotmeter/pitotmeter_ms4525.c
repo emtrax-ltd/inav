@@ -74,6 +74,13 @@ static bool ms4525_read(pitotDev_t * pitot)
     dP_raw2 = 0x3FFF & ((rxbuf2[0] << 8) + rxbuf2[1]);
     dT_raw2 = (0xFFE0 & ((rxbuf2[2] << 8) + rxbuf2[3])) >> 5;
 
+    // reject any values that are the absolute minimum or maximums these
+    // can happen due to gnd lifts or communication errors on the bus
+    if (dP_raw1 == 0x3FFF || dP_raw1 == 0 || dT_raw1 == 0x7FF || dT_raw1 == 0 ||
+        dP_raw2 == 0x3FFF || dP_raw2 == 0 || dT_raw2 == 0x7FF || dT_raw2 == 0) {
+        return false;
+    }
+
     // reject any double reads where the value has shifted in the upper more than 0xFF
     if (ABS(dP_raw1 - dP_raw2) > 0xFF || ABS(dT_raw1 - dT_raw2) > 0xFF) {
         return false;
@@ -83,6 +90,7 @@ static bool ms4525_read(pitotDev_t * pitot)
     ctx->dataValid = true;
     ctx->ms4525_up = (dP_raw1 + dP_raw2) / 2;
     ctx->ms4525_ut = (dT_raw1 + dT_raw2) / 2;
+
     return true;
 }
 
@@ -97,7 +105,7 @@ static void ms4525_calculate(pitotDev_t * pitot, float *pressure, float *tempera
     //float dP = ctx->ms4525_up * 10.0f * 0.1052120688f;
     const float dP_psi = -((ctx->ms4525_up - 0.1f * 16383) * (P_max - P_min) / (0.8f * 16383) + P_min);
     float dP = dP_psi * PSI_to_Pa;
-    float T  = (float)(200.0f * (int32_t)ctx->ms4525_ut) / 2047.0f - 50.0f + 273.15f;
+    float T  = C_TO_KELVIN((float)(200.0f * (int32_t)ctx->ms4525_ut) / 2047.0f - 50.0f);
 
     if (pressure) {
         *pressure = dP;    // Pa
@@ -136,6 +144,7 @@ bool ms4525Detect(pitotDev_t * pitot)
 
     // Initialize pitotDev object
     pitot->delay = 10000;
+    pitot->calibThreshold = 0.00005f;   // noisy sensor
     pitot->start = ms4525_start;
     pitot->get = ms4525_read;
     pitot->calculate = ms4525_calculate;

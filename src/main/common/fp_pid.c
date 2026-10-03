@@ -24,8 +24,6 @@
 
 #include "platform.h"
 
-FILE_COMPILE_FOR_SPEED
-
 #include <math.h>
 #include "common/fp_pid.h"
 
@@ -47,7 +45,13 @@ float navPidApply3(
     const float dTermScaler
 ) {
     float newProportional, newDerivative, newFeedForward;
-    float error = setpoint - measurement;
+    float error = 0.0f;
+    
+    if (pid->errorLpfHz > 0.0f) {
+        error = pt1FilterApply4(&pid->error_filter_state, setpoint - measurement, pid->errorLpfHz, dt);
+    } else {
+        error = setpoint - measurement;
+    }
 
     /* P-term */
     newProportional = error * pid->param.kP * gainScaler;
@@ -68,7 +72,7 @@ float navPidApply3(
         pid->last_input = measurement;
     }
 
-    if (pid->dTermLpfHz > 0) {
+    if (pid->dTermLpfHz > 0.0f) {
         newDerivative = pid->param.kD * pt1FilterApply4(&pid->dterm_filter_state, newDerivative, pid->dTermLpfHz, dt);
     } else {
         newDerivative = pid->param.kD * newDerivative;
@@ -88,6 +92,11 @@ float navPidApply3(
     /* Pre-calculate output and limit it if actuator is saturating */
     const float outVal = newProportional + (pid->integrator * gainScaler) + newDerivative + newFeedForward;
     const float outValConstrained = constrainf(outVal, outMin, outMax);
+    float backCalc = outValConstrained - outVal;//back-calculation anti-windup
+    if (SIGN(backCalc) == SIGN(pid->integrator)) {
+        //back calculation anti-windup can only shrink integrator, will not push it to the opposite direction
+        backCalc = 0.0f;
+    }
 
     pid->proportional = newProportional;
     pid->integral = pid->integrator;
@@ -96,8 +105,11 @@ float navPidApply3(
     pid->output_constrained = outValConstrained;
 
     /* Update I-term */
-    if (!(pidFlags & PID_ZERO_INTEGRATOR)) {
-        const float newIntegrator = pid->integrator + (error * pid->param.kI * gainScaler * dt) + ((outValConstrained - outVal) * pid->param.kT * dt);
+    if (
+        !(pidFlags & PID_ZERO_INTEGRATOR) &&
+        !(pidFlags & PID_FREEZE_INTEGRATOR) 
+    ) {
+        const float newIntegrator = pid->integrator + (error * pid->param.kI * gainScaler * dt) + (backCalc * pid->param.kT * dt);
 
         if (pidFlags & PID_SHRINK_INTEGRATOR) {
             // Only allow integrator to shrink
@@ -135,7 +147,7 @@ void navPidReset(pidController_t *pid)
     pid->output_constrained = 0.0f;
 }
 
-void navPidInit(pidController_t *pid, float _kP, float _kI, float _kD, float _kFF, float _dTermLpfHz)
+void navPidInit(pidController_t *pid, float _kP, float _kI, float _kD, float _kFF, float _dTermLpfHz, float _errorLpfHz)
 {
     pid->param.kP = _kP;
     pid->param.kI = _kI;
@@ -147,10 +159,15 @@ void navPidInit(pidController_t *pid, float _kP, float _kI, float _kD, float _kF
         float Td = _kD / _kP;
         pid->param.kT = 2.0f / (Ti + Td);
     }
+    else if (_kI > 1e-6f) {
+        pid->param.kI = _kI;
+        pid->param.kT = 0.0f;
+    }
     else {
         pid->param.kI = 0.0;
         pid->param.kT = 0.0;
     }
     pid->dTermLpfHz = _dTermLpfHz;
+    pid->errorLpfHz = _errorLpfHz;
     navPidReset(pid);
 }

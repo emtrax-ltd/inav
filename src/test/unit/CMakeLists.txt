@@ -4,10 +4,19 @@ set(MAIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../src/main")
 
 # Keep these alphabetically sorted by test name
 
+set_property(SOURCE accgyro_lsm6dxx_unittest.cc PROPERTY depends
+    "drivers/accgyro/accgyro_lsm6dxx.c")
+set_property(SOURCE accgyro_lsm6dxx_unittest.cc PROPERTY definitions USE_IMU_LSM6DXX)
+
 set_property(SOURCE alignsensor_unittest.cc PROPERTY depends
     "common/maths.c" "sensors/boardalignment.c")
 
 set_property(SOURCE bitarray_unittest.cc PROPERTY depends "common/bitarray.c")
+
+set_property(SOURCE flight_imu_unittest.cc PROPERTY depends     "build/debug.c"
+    "common/maths.c" "common/calibration.c" "common/filter.c"
+    "drivers/accgyro/accgyro_fake.c" "flight/imu.c" "sensors/boardalignment.c"
+    "sensors/gyro.c")
 
 set_property(SOURCE maths_unittest.cc PROPERTY depends "common/maths.c")
 
@@ -28,6 +37,19 @@ set_property(SOURCE telemetry_hott_unittest.cc PROPERTY depends
 set_property(SOURCE time_unittest.cc PROPERTY depends "drivers/time.c")
 
 set_property(SOURCE circular_queue_unittest.cc PROPERTY depends "common/circular_queue.c")
+
+set_property(SOURCE osd_unittest.cc PROPERTY depends "io/osd_utils.c" "io/displayport_msp_osd.c" "common/typeconversion.c")
+set_property(SOURCE osd_unittest.cc PROPERTY definitions OSD_UNIT_TEST USE_MSP_DISPLAYPORT DISABLE_MSP_BF_COMPAT)
+
+set_property(SOURCE gps_ublox_unittest.cc PROPERTY depends "io/gps_ublox_utils.c")
+set_property(SOURCE gps_ublox_unittest.cc PROPERTY definitions GPS_UBLOX_UNIT_TEST)
+
+set_property(SOURCE gps_null_port_unittest.cc PROPERTY depends "io/gps.c")
+set_property(SOURCE gps_null_port_unittest.cc PROPERTY definitions GPS_NULL_PORT_UNIT_TEST USE_GPS_PROTO_UBLOX)
+
+set_property(SOURCE gps_heartbeat_unittest.cc PROPERTY depends "io/gps.c")
+set_property(SOURCE gimbal_serial_unittest.cc PROPERTY depends "io/gimbal_serial.c" "drivers/gimbal_common.c" "common/maths.c" "drivers/headtracker_common.c")
+set_property(SOURCE gimbal_serial_unittest.cc PROPERTY definitions USE_SERIAL_GIMBAL GIMBAL_UNIT_TEST USE_HEADTRACKER)
 
 function(unit_test src)
     get_filename_component(basename ${src} NAME)

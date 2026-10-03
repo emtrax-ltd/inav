@@ -43,6 +43,7 @@ typedef struct uartDevice_s {
     uint8_t af_rx;
     uint8_t af_tx;
     uint8_t irq;
+    bool pinSwap;
 } uartDevice_t;
 
 #define UART_PIN_AF_HELPER(uart, pin)  CONCAT4(UART_PIN_AF_UART, uart, _, pin)
@@ -50,8 +51,8 @@ typedef struct uartDevice_s {
 #ifdef USE_UART1
 #define UART_PIN_AF_UART1_PA9       GPIO_AF7_USART1
 #define UART_PIN_AF_UART1_PA10      GPIO_AF7_USART1
-#define UART_PIN_AF_UART1_PB6       GPIO_AF4_USART1
-#define UART_PIN_AF_UART1_PB7       GPIO_AF4_USART1
+#define UART_PIN_AF_UART1_PB6       GPIO_AF7_USART1
+#define UART_PIN_AF_UART1_PB7       GPIO_AF7_USART1
 #define UART_PIN_AF_UART1_PB14      GPIO_AF4_USART1
 #define UART_PIN_AF_UART1_PB15      GPIO_AF4_USART1
 
@@ -64,6 +65,9 @@ static uartDevice_t uart1 =
     .af_tx = UART_PIN_AF_HELPER(1, UART1_TX_PIN),
     .rcc = RCC_APB2(USART1),
     .irq = USART1_IRQn,
+#ifdef USE_UART1_PIN_SWAP
+    .pinSwap = true,
+#endif
 };
 #endif
 
@@ -77,6 +81,9 @@ static uartDevice_t uart2 =
     .af_tx = GPIO_AF7_USART2,
     .rcc = RCC_APB1L(USART2),
     .irq = USART2_IRQn,
+#ifdef USE_UART2_PIN_SWAP
+    .pinSwap = true,
+#endif
 };
 #endif
 
@@ -90,6 +97,9 @@ static uartDevice_t uart3 =
     .af_tx = GPIO_AF7_USART3,
     .rcc = RCC_APB1L(USART3),
     .irq = USART3_IRQn,
+#ifdef USE_UART3_PIN_SWAP
+    .pinSwap = true,
+#endif
 };
 #endif
 
@@ -114,6 +124,9 @@ static uartDevice_t uart4 =
     .af_tx = UART_PIN_AF_HELPER(4, UART4_TX_PIN),
     .rcc = RCC_APB1L(UART4),
     .irq = UART4_IRQn,
+#ifdef USE_UART4_PIN_SWAP
+    .pinSwap = true,
+#endif
 };
 #endif
 
@@ -134,6 +147,9 @@ static uartDevice_t uart5 =
     .af_tx = UART_PIN_AF_HELPER(5, UART5_TX_PIN),
     .rcc = RCC_APB1L(UART5),
     .irq = UART5_IRQn,
+#ifdef USE_UART5_PIN_SWAP
+    .pinSwap = true,
+#endif
 };
 #endif
 
@@ -147,6 +163,9 @@ static uartDevice_t uart6 =
     .af_tx = GPIO_AF7_USART6,
     .rcc = RCC_APB2(USART6),
     .irq = USART6_IRQn,
+#ifdef USE_UART6_PIN_SWAP
+    .pinSwap = true,
+#endif
 };
 #endif
 
@@ -164,11 +183,18 @@ static uartDevice_t uart7 =
 {
     .dev = UART7,
     .rx = IO_TAG(UART7_RX_PIN),
+#ifdef UART7_TX_PIN
     .tx = IO_TAG(UART7_TX_PIN),
+#endif
     .af_rx = UART_PIN_AF_HELPER(7, UART7_RX_PIN),
+#ifdef UART7_TX_PIN
     .af_tx = UART_PIN_AF_HELPER(7, UART7_TX_PIN),
+#endif
     .rcc = RCC_APB1L(UART7),
     .irq = UART7_IRQn,
+#ifdef USE_UART7_PIN_SWAP
+    .pinSwap = true,
+#endif
 };
 #endif
 
@@ -182,6 +208,9 @@ static uartDevice_t uart8 =
     .af_tx = GPIO_AF8_UART8,
     .rcc = RCC_APB1L(UART8),
     .irq = UART8_IRQn,
+#ifdef USE_UART8_PIN_SWAP
+    .pinSwap = true,
+#endif
 };
 #endif
 
@@ -229,6 +258,30 @@ static uartDevice_t* uartHardwareMap[] = {
     NULL,
 #endif
 };
+
+static uartDevice_t *uartFindDevice(uartPort_t *uartPort)
+{
+    for (unsigned i = 0; i < UARTDEV_MAX; i++) {
+        uartDevice_t *pDevice = uartHardwareMap[i];
+        if (pDevice && pDevice->dev == uartPort->USARTx) {
+            return pDevice;
+        }
+    }
+    return NULL;
+}
+
+void uartConfigurePinSwap(uartPort_t *uartPort)
+{
+    uartDevice_t *uartDevice = uartFindDevice(uartPort);
+    if (!uartDevice) {
+        return;
+    }
+
+    if (uartDevice->pinSwap) {
+        uartPort->Handle.AdvancedInit.AdvFeatureInit |= UART_ADVFEATURE_SWAP_INIT;
+        uartPort->Handle.AdvancedInit.Swap = UART_ADVFEATURE_SWAP_ENABLE;
+    }
+}
 
 void uartGetPortPins(UARTDevice_e device, serialPortPins_t * pins)
 {
@@ -330,6 +383,10 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_t mode, 
     s->USARTx = uart->dev;
 
     s->Handle.Instance = uart->dev;
+
+    if (uart->rcc) {
+        RCC_ClockCmd(uart->rcc, ENABLE);
+    }
 
     IO_t tx = IOGetByTag(uart->tx);
     IO_t rx = IOGetByTag(uart->rx);

@@ -9,11 +9,12 @@ assignees: ''
 
 **PLEASE MAKE SURE YOU READ AND UNDERSTAND THE SOCIAL MEDIA SUPPORT CHANNELS. QUESTIONS ABOUT FLASHING, CONFIGURING, PILOTING MAY BE CLOSED WITHOUT FURTHER INTERACTION.**
 
-* [Telegram channel](https://t.me/INAVFlight)
-* [Facebook group](https://www.facebook.com/groups/INAVOfficial)
-* [RC Groups thread](https://www.rcgroups.com/forums/showthread.php?2495732-Cleanflight-iNav-%28navigation-rewrite%29-project)
+* [INAV Discord Server](https://discord.gg/peg2hhbYwN)
+* [INAV Official on Facebook](https://www.facebook.com/groups/INAVOfficial)
+* [INAV Official on Telegram](https://t.me/INAVFlight)
 
 **Please double-check that nobody reported the issue before by using search in this bug tracker.**
+**For Bug-Reports, please use the following template and provide as much information as possible. Bug-Reports that don't follow the template, might be closed unanswered. If you are not sure if you found a bug, ask for further input in the community channels or open a Github discussion.**
 
 **PLEASE DELETE THE TEXT ABOVE AFTER READING AND UNDERSTANDING IT**
 
@@ -38,7 +39,7 @@ assignees: ''
 
 ## Additional context
 <!-- Add any other context about the problem here.  -->
-<!-- Go to CLI, execute `dump` command copy its output to [PasteBin](https://pastebin.com) and provide a link to a paste here -->
+<!-- Go to CLI, execute `diff` command copy its output to [PasteBin](https://pastebin.com) and provide a link to a paste here -->
 
 ---
 <!-- PLEASE FILL THIS OUT -->

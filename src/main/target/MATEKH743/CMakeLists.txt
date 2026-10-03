@@ -1,1 +1,2 @@
-target_stm32h743xi(MATEKH743 SKIP_RELEASES)
+target_stm32h743xi(MATEKH743)
+target_stm32h743xi(MATEKH743HD)

@@ -36,19 +36,16 @@
 #define USE_DSHOT
 #define USE_ESC_SENSOR
 
-#define USE_MPU_DATA_READY_SIGNAL
-#define USE_EXTI
+
 
 // ICM-20689
 #define USE_IMU_ICM20689
 #define IMU_ICM20689_ALIGN       CW270_DEG
-#define GYRO_INT_EXTI            PE1
 #define ICM20689_CS_PIN          SPI4_NSS_PIN
 #define ICM20689_SPI_BUS         BUS_SPI4
 
 #define USE_IMU_MPU6000
 #define IMU_MPU6000_ALIGN       CW270_DEG
-#define GYRO_INT_EXTI           PE1
 #define MPU6000_CS_PIN          SPI4_NSS_PIN
 #define MPU6000_SPI_BUS         BUS_SPI4
 
@@ -104,7 +101,6 @@
 #define SPI4_MISO_PIN           PE5
 #define SPI4_MOSI_PIN           PE6
 
-#define USE_OSD
 
 #ifndef KAKUTEF7HDV
 #define USE_MAX7456
@@ -135,17 +131,13 @@
 #define USE_BARO
 #define USE_BARO_BMP280
 #define USE_BARO_MS5611
+#define USE_BARO_DPS310
+#define USE_BARO_SPL06
 #define BARO_I2C_BUS            BUS_I2C1
 
 #define USE_MAG
 #define MAG_I2C_BUS             BUS_I2C1
-#define USE_MAG_HMC5883
-#define MAG_HMC5883_ALIGN       CW180_DEG
-#define USE_MAG_QMC5883
-#define USE_MAG_MAG3110
-#define USE_MAG_IST8310
-#define USE_MAG_IST8308
-#define USE_MAG_LIS3MDL
+#define USE_MAG_ALL
 
 #define TEMPERATURE_I2C_BUS     BUS_I2C1
 
@@ -179,5 +171,3 @@
 #define TARGET_IO_PORTE 0xffff
 
 #define MAX_PWM_OUTPUT_PORTS       6
-
-#define BNO055_I2C_BUS          BUS_I2C1

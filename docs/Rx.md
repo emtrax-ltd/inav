@@ -2,12 +2,15 @@
 
 A receiver is used to receive radio control signals from your transmitter and convert them into signals that the flight controller can understand.
 
-There are 2 basic types of receivers:
+There are a number of types of receivers:
 
-1. PPM Receivers
-2. Serial Receivers
+* PPM Receivers (obsolete)
+* Serial Receivers
+* MSP RX
 
 ## PPM Receivers
+
+**Only supported in INAV 3.x and below**
 
 PPM is sometimes known as PPM SUM or CPPM.
 
@@ -45,7 +48,7 @@ http://www.lemon-rx.com/shop/index.php?route=product/product&product_id=118
 
 #### Spektrum pesudo RSSI
 
-As of iNav 1.6, a pseudo RSSI, based on satellite fade count is supported and reported as normal iNav RSSI (0-1023 range). In order to use this feature, the following is necessary:obj/inav_2.2.2_SPRACINGF3EVO.hex
+As of INAV 1.6, a pseudo RSSI, based on satellite fade count is supported and reported as normal INAV RSSI (0-1023 range). In order to use this feature, the following is necessary:
 
 * Bind the satellite receiver using a physical RX; the bind function provided by the flight controller is not sufficient.
 * The CLI variable `rssi_channel` is set to channel 9:
@@ -59,7 +62,7 @@ This pseudo-RSSI should work on all makes of Spektrum satellite RX; it is tested
 16 channels via serial currently supported.  See below how to set up your transmitter.
 
 * You probably need an inverter between the receiver output and the flight controller. However, some flight controllers have this built in and doesn't need one.
-* Some OpenLRS receivers produce obj/inav_2.2.2_SPRACINGF3EVO.hexa non-inverted SBUS signal. It is possible to switch SBUS inversion off using CLI command `set sbus_inversion = OFF` when using an F3 based flight controller.
+* Some OpenLRS receivers produce a non-inverted SBUS signal. It is possible to switch SBUS inversion off using CLI command `set sbus_inversion = OFF` when using an F3 based flight controller.
 * Softserial ports cannot be used with SBUS because it runs at too high of a bitrate (1Mbps).  Refer to the chapter specific to your board to determine which port(s) may be used.
 * You will need to configure the channel mapping in the GUI (Receiver tab) or CLI (`map` command). Note that channels above 8 are mapped "straight", with no remapping.
 
@@ -113,22 +116,6 @@ set serialrx_inverted = ON
 set serialrx_halfduplex = ON
 ```
 
-### XBUS
-
-The firmware currently supports the MODE B version of the XBus protocol.
-Make sure to set your TX to use "MODE B" for XBUS in the TX menus!
-See here for info on JR's XBUS protocol: http://www.jrpropo.com/english/propo/XBus/
-
-These receivers are reported working:
-
-XG14 14ch DMSS System w/RG731BX XBus Receiver
-http://www.jramericas.com/233794/JRP00631/
-
-There exist a remote receiver made for small BNF-models like the Align T-Rex 150 helicopter. The code also supports using the Align DMSS RJ01 receiver directly with the INAV software.
-To use this receiver you must power it with 3V from the hardware, and then connect the serial line as other serial RX receivers.
-In order for this receiver to work, you need to specify the XBUS_MODE_B_RJ01 for serialrx_provider. Note that you need to set your radio mode for XBUS "MODE B" also for this receiver to work.
-Receiver name: Align DMSS RJ01 (HER15001)
-
 ### SUMD
 
 16 channels via serial currently supported.
@@ -140,12 +127,6 @@ http://www.graupner.de/en/products/33512/product.aspx
 
 Graupner receiver GR-12SH+ HoTT
 http://www.graupner.de/en/products/870ade17-ace8-427f-943b-657040579906/33565/product.aspx
-
-### SUMH
-
-8 channels via serial currently supported.
-
-SUMH is a legacy Graupner protocol.  Graupner have issued a firmware updates for many recivers that lets them use SUMD instead.
 
 ### IBUS
 
@@ -170,11 +151,11 @@ The flash is avaliable here: https://github.com/benb0jangles/FlySky-i6-Mod-
 ```
 After flash "10ch Timer Mod i6 Updater", it is passible to get RSSI signal on selected Aux channel from FS-i6 Err sensor.
 
-It is possible to use IBUS RX and IBUS telemetry on only one port of the hardware UART. More information in Telemetry.md.obj/inav_2.2.2_SPRACINGF3EVO.hex
+It is possible to use IBUS RX and IBUS telemetry on only one port of the hardware UART. More information in Telemetry.md.
 
 ### SRXL2
 
-SRXL2 is a newer Spektrum protocol that provides a bidirectional link between the FC and the receiver, allowing the user to get FC telemetry data and basic settings on Spektrum Gen 2 airware TX. SRXL2 is supported in inav 2.6 and later. It offers improved performance and features compared to earlier Spektrum RX.
+SRXL2 is a newer Spektrum protocol that provides a bidirectional link between the FC and the receiver, allowing the user to get FC telemetry data and basic settings on Spektrum Gen 2 airware TX. SRXL2 is supported in INAV 2.6 and later. It offers improved performance and features compared to earlier Spektrum RX.
 
 #### Wiring
 
@@ -182,7 +163,7 @@ Signal pin on receiver (labeled "S") must be wired to a **UART TX** pin on the F
 
 #### Configuration
 
-Selection of SXRL2 is provided in the inav 2.6 and later configurators. It is necessary to complete the configuration via the CLI; the following settings are recommended:
+Selection of SXRL2 is provided in the INAV 2.6 and later configurators. It is necessary to complete the configuration via the CLI; the following settings are recommended:
 
 ```
 feature TELEMETRY
@@ -204,7 +185,7 @@ set rssi_channel = 0
 
 Setting these values differently may have an adverse effects on RSSI readings.
 
-#### CLI Bind Command
+#### CLI Bind Commands
 
 This command will put the receiver into bind mode without the need to reboot the FC as it was required with the older `spektrum_sat_bind` command.
 
@@ -212,9 +193,50 @@ This command will put the receiver into bind mode without the need to reboot the
 bind_rx
 ```
 
-## MultiWii serial protocol (MSP)
+This command will send a bind request to an MSP receiver on the specified port.
 
-Allows you to use MSP commands as the RC input.  Only 8 channel support to maintain compatibility with MSP.
+```
+bind_msp_rx <port>
+```
+
+## MultiWii serial protocol (MSP RX)
+
+Allows you to use MSP commands as the RC input. Up to 34 channels are supported.
+Note:
+* It is necessary to update `MSP_SET_RAW_RC` at 5Hz or faster.
+* `MSP_SET_RAW_RC` uses the defined RC channel map
+* `MSP_RC` returns `AERT` regardless of channel map
+* You can combine "real" RC radio and MSP RX by using `msp_override_channels` to set the channels to be overridden.
+* The [wiki Remote Control and Management article](https://github.com/iNavFlight/inav/wiki/INAV-Remote-Management,-Control-and-Telemetry) provides more information, including links to 3rd party projects that exercise `MSP_SET_RAW_RC` and `USE_MSP_RC_OVERRIDE`
+
+## SIM (SITL) Joystick
+
+Enables the use of a joystick in the INAV SITL with a flight simulator. See the [SITL documentation](SITL/SITL.md).
+
+## MSP Auxiliary RC Channel Overlay (MSP2_INAV_SET_AUX_RC)
+
+Allows extending the available RC channel count beyond the native RC link capacity using `MSP2_INAV_SET_AUX_RC` (`0x2230`). This is a lightweight, bandwidth-efficient alternative to `MSP_SET_RAW_RC` for auxiliary channels only.
+
+**Key properties:**
+- Controls **CH13–CH32** only (CH1–CH12 are protected and rejected)
+- Configurable resolution: 2-bit (3 positions), 4-bit (~71µs steps), 8-bit (~3.9µs steps), or 16-bit (raw PWM)
+- Value `0` = skip (no update) — previous value persists indefinitely
+- No flight mode or special configuration required — always active
+- Does **not** affect failsafe detection
+- Recommended to send with `MSP_FLAG_DONT_REPLY` (`flags=0x01`) on telemetry passthrough links
+
+**Typical use case:** A Lua script on the radio sends `MSP2_INAV_SET_AUX_RC` via SmartPort/CRSF/ELRS telemetry passthrough to control auxiliary functions (lights, camera triggers, gimbal modes) on channels beyond the RC link's native capacity.
+
+**Priority order** (last writer wins):
+1. Primary RX (SBUS, CRSF, FPort, etc.)
+2. MSP RC Override (if active)
+3. **MSP AUX Overlay** (CH13–CH32)
+
+**Important:** For serial RX protocols, the firmware cannot detect which channels the sender actively uses. If AUX_RC targets a channel that the RX link also sends, AUX_RC will override it. Configure the start channel above your RC link's active channel range.
+
+When MSP is the primary RX provider (`receiver_type = MSP`), channels covered by `MSP_SET_RAW_RC` are automatically protected. Channels in the `msp_override_channels` bitmask are also protected when MSP RC Override mode is active.
+
+See the [MSP documentation](development/msp/README.md) for the full message format.
 
 ## Configuration
 
@@ -223,7 +245,7 @@ The receiver type can be set from the configurator or CLI.
 ```
 # get receiver_type
 receiver_type = NONE
-Allowed values: NONE, PPM, SERIAL, MSP, SPI, UIB
+Allowed values: NONE, SERIAL, MSP, SIM (SITL)
 ```
 
 ### RX signal-loss detection
@@ -253,7 +275,7 @@ The highest channel value considered valid.  e.g. PWM/PPM pulse length
 See the Serial chapter for some some RX configuration examples.
 
 To setup spectrum in the GUI:
-1. Start on the "Ports" tab make sure that UART2 has serial RX.  If not set the checkbox, save and reboot.
+1. Start on the "Ports" tab make sure that teh required has serial RX.  If not set the checkbox, save and reboot.
 2. Move to the "Configuration" page and in the upper lefthand corner choose Serial RX as the receiver type.
 3. Below that choose the type of serial receiver that you are using.  Save and reboot.
 
@@ -264,24 +286,13 @@ For Serial RX set the `receiver_type` and `serialrx_provider` setting as appropr
 ```
 # get rec
 receiver_type = SERIAL
-Allowed values: NONE, PPM, SERIAL, MSP, SPI, UIB
+Allowed values: NONE, SERIAL, MSP, SIM (SITL)
 
 # get serialrx
 serialrx_provider = SBUS
-Allowed values: SPEK1024, SPEK2048, SBUS, SUMD, SUMH, XB-B, XB-B-RJ01, IBUS, JETIEXBUS, CRSF, FPORT, SBUS_FAST, FPORT2, SRXL2
+Allowed values: SPEK1024, SPEK2048, SBUS, SUMD, IBUS, JETIEXBUS, CRSF, FPORT, SBUS_FAST, FPORT2, SRXL2, GHST, MAVLINK, FBUS
 
 ```
-
-### PPM/PWM input filtering.
-
-Hardware input filtering can be enabled if you are experiencing interference on the signal sent via your PWM/PPM RX.
-
-Use the `input_filtering_mode` CLI setting to select a mode.
-
-| Value | Meaning   |
-| ----- | --------- |
-| 0     | Disabled  |
-| 1     | Enabled   |
 
 ## Receiver configuration.
 

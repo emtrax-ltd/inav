@@ -1,13 +1,13 @@
 /*
- * This file is part of iNav
+ * This file is part of INAV
  *
- * iNav free software. You can redistribute
+ * INAV free software. You can redistribute
  * this software and/or modify this software under the terms of the
  * GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option)
  * any later version.
  *
- * iNav distributed in the hope that it
+ * INAV is distributed in the hope that it
  * will be useful, but WITHOUT ANY WARRANTY; without even the implied
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -42,6 +42,11 @@ typedef struct {
     int8_t count;
     int16_t voltage[6];
 } cellsData_t;
+
+typedef struct {
+    int16_t amperage;
+    int16_t vfas;
+} batteryData_t;
 
 typedef enum {
     VS600_BAND_A,
@@ -83,5 +88,7 @@ bool smartportMasterNextForwardResponse(uint8_t phyID, smartPortPayload_t *paylo
 // Returns latest Cells data or NULL if the data is too old
 cellsData_t *smartportMasterGetCellsData(void);
 vs600Data_t *smartportMasterGetVS600Data(void);
+int16_t *smartportMasterGetCurrentData(void);
+int16_t *smartportMasterGetVoltageData(void);
 
 #endif /* USE_SMARTPORT_MASTER */

@@ -25,15 +25,8 @@
 #define CAMERA_CONTROL_PIN      PB7
 
 #define BEEPER                  PB14
-#define BEEPER_PWM
 #define BEEPER_INVERTED
 #define BEEPER_PWM_FREQUENCY    3150
-
-// Gyro interrupt
-#define USE_EXTI
-#define GYRO_INT_EXTI           PC4
-#define USE_MPU_DATA_READY_SIGNAL
-#define ENSURE_MPU_DATA_READY_IS_LOW
 
 // ICM 20689
 #define USE_IMU_ICM20689
@@ -43,11 +36,8 @@
 
 #define USE_MAG
 #define MAG_I2C_BUS             BUS_I2C1
-#define USE_MAG_HMC5883
-#define MAG_HMC5883_ALIGN       CW270_DEG_FLIP
-#define USE_MAG_QMC5883
+#define USE_MAG_ALL
 #define TEMPERATURE_I2C_BUS     BUS_I2C1
-#define BNO055_I2C_BUS          BUS_I2C1
 
 #define USE_BARO
 #define BARO_I2C_BUS            BUS_I2C1
@@ -116,7 +106,6 @@
 #define I2C_DEVICE              (I2CDEV_1)
 
 // OSD
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_BUS         BUS_SPI1
 #define MAX7456_CS_PIN          PA14

@@ -24,8 +24,6 @@
 
 #include "platform.h"
 
-FILE_COMPILE_FOR_SIZE
-
 #ifdef USE_PROGRAMMING_FRAMEWORK
 
 #include "common/utils.h"
@@ -40,7 +38,7 @@ FILE_COMPILE_FOR_SIZE
 EXTENDED_FASTRAM programmingPidState_t programmingPidState[MAX_PROGRAMMING_PID_COUNT];
 static bool pidsInitiated = false;
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(programmingPid_t, MAX_PROGRAMMING_PID_COUNT, programmingPids, PG_PROGRAMMING_PID, 1);
+PG_REGISTER_ARRAY_WITH_RESET_FN(programmingPid_t, MAX_PROGRAMMING_PID_COUNT, programmingPids, PG_PROGRAMMING_PID, 2);
 
 void pgResetFn_programmingPids(programmingPid_t *instance)
 {
@@ -105,7 +103,8 @@ void programmingPidInit(void)
             programmingPids(i)->gains.I / 1000.0f,
             programmingPids(i)->gains.D / 1000.0f,
             programmingPids(i)->gains.FF / 1000.0f,
-            5.0f
+            5.0f,
+            0.0f
         );
     }
 }

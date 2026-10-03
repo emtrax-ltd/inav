@@ -6,7 +6,7 @@ The "Home" position is used for the landing point when landing is enabled or in 
 
 For airplanes, the landing procedure is explained very well by Pawel Spychalski [here.](https://quadmeup.com/inav-1-8-automated-landing-for-fixed-wings/)
 
-<img src="https://quadmeup.com/wp-content/uploads/2017/06/fixed-wing-landing-1024x683.png" width="600">
+![Fixed wing loiter and descend](assets/images/loiter_and_descend.png)
 
 One potential risk when landing is that there might be buildings, trees and other obstacles in the way as the airplance circles lower toward the ground at the arming point.  Most people don't go the middle of the field when arming their airplanes.
 
@@ -20,7 +20,7 @@ The safehome operating mode is set using ```safehome_usage_mode```.  If ```OFF``
 
 If you frequently use RTH to return back to the arming point, you may not want the aircraft to fly to the safehome.  Let it do this at least once to confirm safehomes is working as expected.  Afterward, `set safehome_usage_mode = RTH_FS` and the safehome will only be used for failsafe.  
 
-When using mode `RTH_FS`, you should confirm that your radio's failsafe configuration triggers the iNav failsafe mode.  With many receivers, you have the ability to specify what signal to output during failsafe conditions.
+When using mode `RTH_FS`, you should confirm that your radio's failsafe configuration triggers the INAV failsafe mode.  With many receivers, you have the ability to specify what signal to output during failsafe conditions.
 
 When you are choosing safehome locations, ensure that the location is clear of obstructions for a radius more than 50m (`nav_fw_loiter_radius`).  As the plane descends, the circles aren't always symmetrical, as wind direction could result in some wider or tighter turns.  Also, the direction and length of the final landing stage is also unknown.  You want to choose a point that has provides a margin for variation and the final landing.
 

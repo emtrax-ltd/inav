@@ -22,55 +22,83 @@ DEFAULTS_BLACKLIST = [
     'serialrx_provider',
 ]
 
+MIN_MAX_REPLACEMENTS = {
+    'INT16_MIN': -32768,
+    'INT16_MAX': 32767,
+    'INT32_MIN': -2147483648,
+    'INT32_MAX': 2147483647,
+    'UINT8_MAX': 255,
+    'UINT16_MAX': 65535,
+    'UINT32_MAX': 4294967295,
+}
+
 def parse_settings_yaml():
     """Parse the YAML settings specs"""
 
     with open(SETTINGS_YAML_PATH, "r") as settings_yaml:
         return yaml.load(settings_yaml, Loader=yaml.Loader)
 
-def generate_md_table_from_yaml(settings_yaml):
+def generate_md_from_yaml(settings_yaml):
     """Generate a sorted markdown table with description & default value for each setting"""
     params = {}
     
-    # Extract description and default value of each setting from the YAML specs (if present)
+    # Extract description, default/min/max values of each setting from the YAML specs (if present)
     for group in settings_yaml['groups']:
         for member in group['members']:
-            if not any(key in member for key in ["description", "default_value"]) and not options.quiet:
-                print("Setting \"{}\" has no description or default value specified".format(member['name']))
-            # Handle edge cases of YAML autogeneration
-            if "default_value" in member:
-                # Replace booleans with "ON"/"OFF"
-                if type(member["default_value"]) == bool:
-                    member["default_value"] = "ON" if member["default_value"] else "OFF"
-                # Replace zero placeholder with actual zero
-                elif member["default_value"] == ":zero":
-                    member["default_value"] = 0
-                # Replace target-default placeholder with extended definition
-                elif member["default_value"] == ":target":
-                    member["default_value"] = "_target default_"
-                # Replace empty strings with more evident marker
-                elif member["default_value"] == "":
-                    member["default_value"] = "_empty_"
-                # Reformat direct code references
-                elif str(member["default_value"])[0] == ":":
-                    member["default_value"] = f'`{member["default_value"][1:]}`'
+            if not any(key in member for key in ["description", "default_value", "min", "max"]) and not options.quiet:
+                print("Setting \"{}\" has an incomplete specification".format(member['name']))
+
+            # Handle default/min/max fields for each setting
+            for key in ["default_value", "min", "max"]:
+                # Basing on the check above, not all fields may be present
+                if key in member:
+                    ### Fetch actual values from the `constants` block if present
+                    if ('constants' in settings_yaml) and (member[key] in settings_yaml['constants']):
+                        member[key] = settings_yaml['constants'][member[key]]
+                    ### Fetch actual values from hardcoded min/max replacements
+                    elif member[key] in MIN_MAX_REPLACEMENTS:
+                        member[key] = MIN_MAX_REPLACEMENTS[member[key]]
+
+                    ### Handle edge cases of YAML autogeneration and prettify some values
+                    # Replace booleans with "ON"/"OFF"
+                    if type(member[key]) == bool:
+                        member[key] = "ON" if member[key] else "OFF"
+                        member["min"] = "OFF"
+                        member["max"] = "ON"
+                    # Replace zero placeholder with actual zero
+                    elif member[key] == ":zero":
+                        member[key] = 0
+                    # Replace target-default placeholder with extended definition
+                    elif member[key] == ":target":
+                        member[key] = "_target default_"
+                    # Replace empty strings with more evident marker
+                    elif member[key] == "":
+                        member[key] = "_empty_"
+                    # Reformat direct code references
+                    elif str(member[key])[0] == ":":
+                        member[key] = f'`{member[key][1:]}`'
+
+
             params[member['name']] = {
                     "description": member["description"] if "description" in member else "",
-                    "default": member["default_value"] if "default_value" in member else ""
+                    "default": member["default_value"] if "default_value" in member else "",
+                    "min": member["min"] if "min" in member else "",
+                    "max": member["max"] if "max" in member else ""
                 }
     
-    # MD table header
-    md_table_lines = [
-        "| Variable Name | Default Value | Description |\n",
-        "| ------------- | ------------- | ----------- |\n",
-        ]
-    
-    # Sort the settings by name and build the rows of the table
+    # Sort the settings by name and build the doc
+    output_lines = []
     for param in sorted(params.items()):
-        md_table_lines.append("| {} | {} | {} |\n".format(param[0], param[1]['default'], param[1]['description']))
+        output_lines.extend([
+            f"### {param[0]}\n\n",
+            f"{param[1]['description'] if param[1]['description'] else '_// TODO_'}\n\n",
+            "| Default | Min | Max |\n| --- | --- | --- |\n",
+            f"| {param[1]['default']} | {param[1]['min']} | {param[1]['max']} |\n\n",
+            "---\n\n"
+        ])
     
-    # Return the assembled table
-    return md_table_lines
+    # Return the assembled doc body
+    return output_lines
 
 def write_settings_md(lines):
     """Write the contents of the CLI settings docs"""
@@ -158,9 +186,9 @@ if __name__ == "__main__":
         defaults_match = check_defaults(settings_yaml)
         quit(0 if defaults_match else 1)
     
-    md_table_lines = generate_md_table_from_yaml(settings_yaml)
-    settings_md_lines = \
-        ["# CLI Variable Reference\n", "\n" ] + \
-        md_table_lines + \
-        ["\n", "> Note: this table is autogenerated. Do not edit it manually."]
-    write_settings_md(settings_md_lines)
+    output_lines = generate_md_from_yaml(settings_yaml)
+    output_lines = [
+        "# CLI Variable Reference\n\n",
+        "> Note: this document is autogenerated. Do not edit it manually.\n\n"
+    ] + output_lines
+    write_settings_md(output_lines)

@@ -22,12 +22,11 @@
 
 #include "platform.h"
 
-FILE_COMPILE_FOR_SPEED
-
 #include "common/filter.h"
+#include "common/lulu.h"
 #include "common/maths.h"
 #include "common/utils.h"
-
+#include "common/time.h"
 // NULL filter
 float nullFilterApply(void *filter, float input)
 {
@@ -45,7 +44,7 @@ float nullFilterApply4(void *filter, float input, float f_cut, float dt)
 
 // PT1 Low Pass filter
 
-static float pt1ComputeRC(const float f_cut)
+static float FAST_CODE pt1ComputeRC(const float f_cut)
 {
     return 1.0f / (2.0f * M_PIf * f_cut);
 }
@@ -107,6 +106,72 @@ float FAST_CODE NOINLINE pt1FilterApply4(pt1Filter_t *filter, float input, float
 void pt1FilterReset(pt1Filter_t *filter, float input)
 {
     filter->state = input;
+}
+
+/*
+ * PT2 LowPassFilter
+ */
+float pt2FilterGain(float f_cut, float dT)
+{
+    const float order = 2.0f;
+    const float orderCutoffCorrection = 1 / sqrtf(powf(2, 1.0f / order) - 1);
+    float RC = 1 / (2 * orderCutoffCorrection * M_PIf * f_cut);
+    // float RC = 1 / (2 * 1.553773974f * M_PIf * f_cut);
+    // where 1.553773974 = 1 / sqrt( (2^(1 / order) - 1) ) and order is 2
+    return dT / (RC + dT);
+}
+
+void pt2FilterInit(pt2Filter_t *filter, float k)
+{
+    filter->state = 0.0f;
+    filter->state1 = 0.0f;
+    filter->k = k;
+}
+
+void pt2FilterUpdateCutoff(pt2Filter_t *filter, float k)
+{
+    filter->k = k;
+}
+
+FAST_CODE float pt2FilterApply(pt2Filter_t *filter, float input)
+{
+    filter->state1 = filter->state1 + filter->k * (input - filter->state1);
+    filter->state = filter->state + filter->k * (filter->state1 - filter->state);
+    return filter->state;
+}
+
+/*
+ * PT3 LowPassFilter
+ */
+float pt3FilterGain(float f_cut, float dT)
+{
+    const float order = 3.0f;
+    const float orderCutoffCorrection = 1 / sqrtf(powf(2, 1.0f / order) - 1);
+    float RC = 1 / (2 * orderCutoffCorrection * M_PIf * f_cut);
+    // float RC = 1 / (2 * 1.961459177f * M_PIf * f_cut);
+    // where 1.961459177 = 1 / sqrt( (2^(1 / order) - 1) ) and order is 3
+    return dT / (RC + dT);
+}
+
+void pt3FilterInit(pt3Filter_t *filter, float k)
+{
+    filter->state = 0.0f;
+    filter->state1 = 0.0f;
+    filter->state2 = 0.0f;
+    filter->k = k;
+}
+
+void pt3FilterUpdateCutoff(pt3Filter_t *filter, float k)
+{
+    filter->k = k;
+}
+
+FAST_CODE float pt3FilterApply(pt3Filter_t *filter, float input)
+{
+    filter->state1 = filter->state1 + filter->k * (input - filter->state1);
+    filter->state2 = filter->state2 + filter->k * (filter->state1 - filter->state2);
+    filter->state = filter->state + filter->k * (filter->state2 - filter->state);
+    return filter->state;
 }
 
 // rate_limit = maximum rate of change of the output value in units per second
@@ -249,4 +314,39 @@ FAST_CODE void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint
     filter->x2 = x2;
     filter->y1 = y1;
     filter->y2 = y2;
+}
+
+void initFilter(const uint8_t filterType, filter_t *filter, const float cutoffFrequency, const uint32_t refreshRate) {
+    const float dT = US2S(refreshRate);
+
+    if (cutoffFrequency) {
+        if (filterType == FILTER_PT1) {
+            pt1FilterInit(&filter->pt1, cutoffFrequency, dT);
+        } if (filterType == FILTER_PT2) {
+            pt2FilterInit(&filter->pt2, pt2FilterGain(cutoffFrequency, dT));
+        } if (filterType == FILTER_PT3) {
+            pt3FilterInit(&filter->pt3, pt3FilterGain(cutoffFrequency, dT));
+        } if (filterType == FILTER_LULU) {
+            luluFilterInit(&filter->lulu, cutoffFrequency);
+        } else {
+            biquadFilterInitLPF(&filter->biquad, cutoffFrequency, refreshRate);
+        }
+    }
+}
+
+void assignFilterApplyFn(uint8_t filterType, float cutoffFrequency, filterApplyFnPtr *applyFn) {
+    *applyFn = nullFilterApply;
+    if (cutoffFrequency) {
+        if (filterType == FILTER_PT1) {
+            *applyFn = (filterApplyFnPtr) pt1FilterApply;
+        } if (filterType == FILTER_PT2) {
+            *applyFn = (filterApplyFnPtr) pt2FilterApply;
+        } if (filterType == FILTER_PT3) {
+            *applyFn = (filterApplyFnPtr) pt3FilterApply;
+        } if (filterType == FILTER_LULU) {
+            *applyFn = (filterApplyFnPtr) luluFilterApply;
+        } else {
+            *applyFn = (filterApplyFnPtr) biquadFilterApply;
+        }
+    }
 }

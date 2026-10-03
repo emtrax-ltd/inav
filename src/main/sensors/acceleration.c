@@ -22,8 +22,6 @@
 
 #include "platform.h"
 
-FILE_COMPILE_FOR_SPEED
-
 #include "build/debug.h"
 
 #include "common/axis.h"
@@ -38,21 +36,17 @@ FILE_COMPILE_FOR_SPEED
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_mpu.h"
-#include "drivers/accgyro/accgyro_mpu3050.h"
 #include "drivers/accgyro/accgyro_mpu6000.h"
-#include "drivers/accgyro/accgyro_mpu6050.h"
 #include "drivers/accgyro/accgyro_mpu6500.h"
 #include "drivers/accgyro/accgyro_mpu9250.h"
 
-#include "drivers/accgyro/accgyro_lsm303dlhc.h"
-#include "drivers/accgyro/accgyro_l3g4200d.h"
-#include "drivers/accgyro/accgyro_l3gd20.h"
-#include "drivers/accgyro/accgyro_adxl345.h"
-#include "drivers/accgyro/accgyro_mma845x.h"
-#include "drivers/accgyro/accgyro_bma280.h"
 #include "drivers/accgyro/accgyro_bmi088.h"
 #include "drivers/accgyro/accgyro_bmi160.h"
+#include "drivers/accgyro/accgyro_bmi270.h"
 #include "drivers/accgyro/accgyro_icm20689.h"
+#include "drivers/accgyro/accgyro_icm42605.h"
+#include "drivers/accgyro/accgyro_icm45686.h"
+#include "drivers/accgyro/accgyro_lsm6dxx.h"
 #include "drivers/accgyro/accgyro_fake.h"
 #include "drivers/sensor.h"
 
@@ -77,7 +71,7 @@ FASTRAM acc_t acc;                       // acc access functions
 
 STATIC_FASTRAM zeroCalibrationVector_t zeroCalibration;
 
-STATIC_FASTRAM int32_t accADC[XYZ_AXIS_COUNT];
+STATIC_FASTRAM float accADC[XYZ_AXIS_COUNT];
 
 STATIC_FASTRAM filter_t accFilter[XYZ_AXIS_COUNT];
 STATIC_FASTRAM filterApplyFnPtr accSoftLpfFilterApplyFn;
@@ -89,17 +83,20 @@ static EXTENDED_FASTRAM pt1Filter_t accVibeFilter[XYZ_AXIS_COUNT];
 static EXTENDED_FASTRAM filterApplyFnPtr accNotchFilterApplyFn;
 static EXTENDED_FASTRAM void *accNotchFilter[XYZ_AXIS_COUNT];
 
-PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 3);
+static EXTENDED_FASTRAM float fAccZero[XYZ_AXIS_COUNT];
+static EXTENDED_FASTRAM float fAccGain[XYZ_AXIS_COUNT];
+
+PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 6);
 
 void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
 {
     RESET_CONFIG_2(accelerometerConfig_t, instance,
-        .acc_align = SETTING_ALIGN_ACC_DEFAULT,
         .acc_hardware = SETTING_ACC_HARDWARE_DEFAULT,
         .acc_lpf_hz = SETTING_ACC_LPF_HZ_DEFAULT,
         .acc_notch_hz = SETTING_ACC_NOTCH_HZ_DEFAULT,
         .acc_notch_cutoff = SETTING_ACC_NOTCH_CUTOFF_DEFAULT,
-        .acc_soft_lpf_type = SETTING_ACC_LPF_TYPE_DEFAULT
+        .acc_soft_lpf_type = SETTING_ACC_LPF_TYPE_DEFAULT,
+        .acc_temp_correction = SETTING_ACC_TEMP_CORRECTION_DEFAULT
     );
     RESET_CONFIG_2(flightDynamicsTrims_t, &instance->accZero,
         .raw[X] = SETTING_ACCZERO_X_DEFAULT,
@@ -113,6 +110,17 @@ void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
     );
 }
 
+static void updateAccCoefficients(void) {
+
+    for (uint8_t i = 0; i < XYZ_AXIS_COUNT; i++) {
+        //Float zero
+        fAccZero[i] = (float)accelerometerConfig()->accZero.raw[i];
+        //Float gain
+        fAccGain[i] = (float)accelerometerConfig()->accGain.raw[i] / 4096.0f;
+    }
+
+}
+
 static bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 {
     accelerationSensor_e accHardware = ACC_NONE;
@@ -124,71 +132,6 @@ static bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
     switch (accHardwareToUse) {
     case ACC_AUTODETECT:
         FALLTHROUGH;
-#ifdef USE_IMU_ADXL345
-    case ACC_ADXL345: {
-        if (adxl345Detect(dev)) {
-            accHardware = ACC_ADXL345;
-            break;
-        }
-        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
-        if (accHardwareToUse != ACC_AUTODETECT) {
-            break;
-        }
-    }
-    FALLTHROUGH;
-#endif
-
-#ifdef USE_IMU_LSM303DLHC
-    case ACC_LSM303DLHC:
-        if (lsm303dlhcAccDetect(dev)) {
-            accHardware = ACC_LSM303DLHC;
-            break;
-        }
-        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
-        if (accHardwareToUse != ACC_AUTODETECT) {
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_IMU_MPU6050
-    case ACC_MPU6050: // MPU6050
-        if (mpu6050AccDetect(dev)) {
-            accHardware = ACC_MPU6050;
-            break;
-        }
-        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
-        if (accHardwareToUse != ACC_AUTODETECT) {
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_IMU_MMA8452
-    case ACC_MMA8452: // MMA8452
-        if (mma8452Detect(dev)) {
-            accHardware = ACC_MMA8452;
-            break;
-        }
-        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
-        if (accHardwareToUse != ACC_AUTODETECT) {
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_IMU_BMA280
-    case ACC_BMA280: // BMA280
-        if (bma280Detect(dev)) {
-            accHardware = ACC_BMA280;
-            break;
-        }
-        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
-        if (accHardwareToUse != ACC_AUTODETECT) {
-            break;
-        }
-        FALLTHROUGH;
-#endif
 
 #ifdef USE_IMU_MPU6000
     case ACC_MPU6000:
@@ -268,7 +211,55 @@ static bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
         FALLTHROUGH;
 #endif
 
+#ifdef USE_IMU_ICM42605
+    case ACC_ICM42605:
+        if (icm42605AccDetect(dev)) {
+            accHardware = ACC_ICM42605;
+            break;
+        }
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (accHardwareToUse != ACC_AUTODETECT) {
+            break;
+        }
+        FALLTHROUGH;
+#endif
 
+#ifdef USE_IMU_BMI270
+    case ACC_BMI270:
+        if (bmi270AccDetect(dev)) {
+            accHardware = ACC_BMI270;
+            break;
+        }
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (accHardwareToUse != ACC_AUTODETECT) {
+            break;
+        }
+        FALLTHROUGH;
+#endif
+#ifdef USE_IMU_LSM6DXX
+    case ACC_LSM6DXX:
+        if (lsm6dAccDetect(dev)) {
+            accHardware = ACC_LSM6DXX;
+            break;
+        }
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (accHardwareToUse != ACC_AUTODETECT) {
+            break;
+        }
+        FALLTHROUGH;
+#endif
+#ifdef USE_IMU_ICM45686
+    case ACC_ICM45686:
+        if (icm45686AccDetect(dev)) {
+            accHardware = ACC_ICM45686;
+            break;
+        }
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (accHardwareToUse != ACC_AUTODETECT) {
+            break;
+        }
+        FALLTHROUGH;
+#endif
 #ifdef USE_IMU_FAKE
     case ACC_FAKE:
         if (fakeAccDetect(dev)) {
@@ -317,22 +308,18 @@ bool accInit(uint32_t targetLooptime)
     acc.accTargetLooptime = targetLooptime;
     acc.accClipCount = 0;
     accInitFilters();
+    updateAccCoefficients();
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         acc.extremes[axis].min = 100;
         acc.extremes[axis].max = -100;
     }
 
-    // At this poinrt acc.dev.accAlign was set up by the driver from the busDev record
-    // If configuration says different - override
-    if (accelerometerConfig()->acc_align != ALIGN_DEFAULT) {
-        acc.dev.accAlign = accelerometerConfig()->acc_align;
-    }
     return true;
 }
 
 static bool calibratedPosition[6];
-static int32_t accSamples[6][3];
+static float accSamples[6][3];
 
 uint8_t accGetCalibrationAxisFlags(void)
 {
@@ -351,10 +338,10 @@ uint8_t accGetCalibrationAxisFlags(void)
     return flags;
 }
 
-static int getPrimaryAxisIndex(int32_t accADCData[3])
+static int getPrimaryAxisIndex(float accADCData[3])
 {
     // Work on a copy so we don't mess with accADC data
-    int32_t sample[3];
+    float sample[3];
 
     applySensorAlignment(sample, accADCData, acc.dev.accAlign);
 
@@ -438,9 +425,9 @@ static void performAcclerationCalibration(void)
     }
 
     if (!calibratedPosition[positionIndex]) {
-        v.v[0] = accADC[0];
-        v.v[1] = accADC[1];
-        v.v[2] = accADC[2];
+        v.v[X] = accADC[X];
+        v.v[Y] = accADC[Y];
+        v.v[Z] = accADC[Z];
 
         zeroCalibrationAddValueV(&zeroCalibration, &v);
 
@@ -475,9 +462,9 @@ static void performAcclerationCalibration(void)
         }
 
         if (!sensorCalibrationSolveForOffset(&calState, accTmp)) {
-            accTmp[0] = 0.0f;
-            accTmp[1] = 0.0f;
-            accTmp[2] = 0.0f;
+            accTmp[X] = 0.0f;
+            accTmp[Y] = 0.0f;
+            accTmp[Z] = 0.0f;
             calFailed = true;
         }
 
@@ -489,7 +476,7 @@ static void performAcclerationCalibration(void)
         sensorCalibrationResetState(&calState);
 
         for (int axis = 0; axis < 6; axis++) {
-            int32_t accSample[3];
+            float accSample[3];
 
             accSample[X] = accSamples[axis][X] - accelerometerConfig()->accZero.raw[X];
             accSample[Y] = accSamples[axis][Y] - accelerometerConfig()->accZero.raw[Y];
@@ -499,9 +486,9 @@ static void performAcclerationCalibration(void)
         }
 
         if (!sensorCalibrationSolveForScale(&calState, accTmp)) {
-            accTmp[0] = 1.0f;
-            accTmp[1] = 1.0f;
-            accTmp[2] = 1.0f;
+            accTmp[X] = 1.0f;
+            accTmp[Y] = 1.0f;
+            accTmp[Z] = 1.0f;
             calFailed = true;
         }
 
@@ -519,15 +506,20 @@ static void performAcclerationCalibration(void)
             // saveConfigAndNotify will trigger eepromREAD and in turn call back the accelerometer gain validation
             // that will set ENABLE_STATE(ACCELEROMETER_CALIBRATED) if all is good
             saveConfigAndNotify();
+            //Recompute all coeffs
+            updateAccCoefficients();
         }
     }
 }
 
-static void applyAccelerationZero(const flightDynamicsTrims_t * accZero, const flightDynamicsTrims_t * accGain)
+static void applyAccelerationZero(void)
 {
-    accADC[X] = (accADC[X] - accZero->raw[X]) * accGain->raw[X] / 4096;
-    accADC[Y] = (accADC[Y] - accZero->raw[Y]) * accGain->raw[Y] / 4096;
-    accADC[Z] = (accADC[Z] - accZero->raw[Z]) * accGain->raw[Z] / 4096;
+    float tmp[XYZ_AXIS_COUNT];
+
+    //Apply zero
+    arm_sub_f32(accADC, fAccZero, tmp, XYZ_AXIS_COUNT);
+    //Apply gain
+    arm_mult_f32(tmp, fAccGain, accADC, XYZ_AXIS_COUNT);
 }
 
 /*
@@ -535,9 +527,7 @@ static void applyAccelerationZero(const flightDynamicsTrims_t * accZero, const f
  */
 void accGetMeasuredAcceleration(fpVector3_t *measuredAcc)
 {
-    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        measuredAcc->v[axis] = acc.accADCf[axis] * GRAVITY_CMSS;
-    }
+    arm_scale_f32(acc.accADCf, GRAVITY_CMSS, measuredAcc->v, XYZ_AXIS_COUNT);
 }
 
 /*
@@ -553,20 +543,36 @@ float accGetMeasuredMaxG(void)
     return acc.maxG;
 }
 
+void resetGForceStats(void) {
+    acc.maxG = 0.0f;
+
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        acc.extremes[axis].min = 100;
+        acc.extremes[axis].max = -100;
+    }
+}
+
 void accUpdate(void)
 {
+#ifdef USE_SIMULATOR
+    if (ARMING_FLAG(SIMULATOR_MODE_HITL)) {
+        //output: acc.accADCf
+        //unused: acc.dev.ADCRaw[], acc.accClipCount, acc.accVibeSq[]
+        return;
+    }
+#endif
     if (!acc.dev.readFn(&acc.dev)) {
         return;
     }
-
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         accADC[axis] = acc.dev.ADCRaw[axis];
         DEBUG_SET(DEBUG_ACC, axis, accADC[axis]);
     }
 
-    performAcclerationCalibration();
-
-    applyAccelerationZero(&accelerometerConfig()->accZero, &accelerometerConfig()->accGain);
+    if (!ARMING_FLAG(SIMULATOR_MODE_SITL)) {
+        performAcclerationCalibration();
+        applyAccelerationZero();
+    }
 
     applySensorAlignment(accADC, accADC, acc.dev.accAlign);
     applyBoardAlignment(accADC);
@@ -594,6 +600,7 @@ void accUpdate(void)
         const float accDiff = acc.accADCf[axis] - accFloorFilt;
         acc.accVibeSq[axis] = pt1FilterApply(&accVibeFilter[axis], accDiff * accDiff);
     }
+    acc.accVibe = fast_fsqrtf(acc.accVibeSq[X] + acc.accVibeSq[Y] + acc.accVibeSq[Z]);
 
     // Filter acceleration
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -616,20 +623,20 @@ void updateAccExtremes(void)
         if (acc.accADCf[axis] > acc.extremes[axis].max) acc.extremes[axis].max = acc.accADCf[axis];
     }
 
-    float gforce = sqrtf(sq(acc.accADCf[0]) + sq(acc.accADCf[1]) + sq(acc.accADCf[2]));
+    float gforce = calc_length_pythagorean_3D(acc.accADCf[X], acc.accADCf[Y], acc.accADCf[Z]);
     if (gforce > acc.maxG) acc.maxG = gforce;
 }
 
 void accGetVibrationLevels(fpVector3_t *accVibeLevels)
 {
-    accVibeLevels->x = sqrtf(acc.accVibeSq[X]);
-    accVibeLevels->y = sqrtf(acc.accVibeSq[Y]);
-    accVibeLevels->z = sqrtf(acc.accVibeSq[Z]);
+    accVibeLevels->x = fast_fsqrtf(acc.accVibeSq[X]);
+    accVibeLevels->y = fast_fsqrtf(acc.accVibeSq[Y]);
+    accVibeLevels->z = fast_fsqrtf(acc.accVibeSq[Z]);
 }
 
 float accGetVibrationLevel(void)
 {
-    return sqrtf(acc.accVibeSq[X] + acc.accVibeSq[Y] + acc.accVibeSq[Z]);
+    return acc.accVibe;
 }
 
 uint32_t accGetClipCount(void)
@@ -644,8 +651,9 @@ bool accIsClipped(void)
 
 void accSetCalibrationValues(void)
 {
-    if ((accelerometerConfig()->accZero.raw[X] == 0) && (accelerometerConfig()->accZero.raw[Y] == 0) && (accelerometerConfig()->accZero.raw[Z] == 0) &&
-        (accelerometerConfig()->accGain.raw[X] == 4096) && (accelerometerConfig()->accGain.raw[Y] == 4096) &&(accelerometerConfig()->accGain.raw[Z] == 4096)) {
+    if (!ARMING_FLAG(SIMULATOR_MODE_SITL) &&
+        ((accelerometerConfig()->accZero.raw[X] == 0) && (accelerometerConfig()->accZero.raw[Y] == 0) && (accelerometerConfig()->accZero.raw[Z] == 0) &&
+        (accelerometerConfig()->accGain.raw[X] == 4096) && (accelerometerConfig()->accGain.raw[Y] == 4096) &&(accelerometerConfig()->accGain.raw[Z] == 4096))) {
         DISABLE_STATE(ACCELEROMETER_CALIBRATED);
     }
     else {
@@ -654,18 +662,18 @@ void accSetCalibrationValues(void)
 }
 
 void accInitFilters(void)
-{   
+{
     accSoftLpfFilterApplyFn = nullFilterApply;
 
     if (acc.accTargetLooptime && accelerometerConfig()->acc_lpf_hz) {
 
-        switch (accelerometerConfig()->acc_soft_lpf_type) 
+        switch (accelerometerConfig()->acc_soft_lpf_type)
         {
         case FILTER_PT1:
             accSoftLpfFilterApplyFn = (filterApplyFnPtr)pt1FilterApply;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 accSoftLpfFilter[axis] = &accFilter[axis].pt1;
-                pt1FilterInit(accSoftLpfFilter[axis], accelerometerConfig()->acc_lpf_hz, acc.accTargetLooptime * 1e-6f);
+                pt1FilterInit(accSoftLpfFilter[axis], accelerometerConfig()->acc_lpf_hz, US2S(acc.accTargetLooptime));
             }
             break;
         case FILTER_BIQUAD:
@@ -679,7 +687,7 @@ void accInitFilters(void)
 
     }
 
-    const float accDt = acc.accTargetLooptime * 1e-6f;
+    const float accDt = US2S(acc.accTargetLooptime);
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         pt1FilterInit(&accVibeFloorFilter[axis], ACC_VIBE_FLOOR_FILT_HZ, accDt);
         pt1FilterInit(&accVibeFilter[axis], ACC_VIBE_FILT_HZ, accDt);

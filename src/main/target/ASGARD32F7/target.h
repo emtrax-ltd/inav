@@ -35,10 +35,6 @@
 #define BEEPER                  PC13
 #define BEEPER_INVERTED
 
-// #define USE_EXTI
-// #define GYRO_INT_EXTI            PC8
-// #define USE_MPU_DATA_READY_SIGNAL        // Not connected on FireworksV2
-
 #define USE_IMU_MPU6000
 #define IMU_MPU6000_ALIGN       CW90_DEG
 #define MPU6000_CS_PIN          PA4
@@ -46,11 +42,7 @@
 
 #define USE_MAG
 #define MAG_I2C_BUS             BUS_I2C2
-#define USE_MAG_HMC5883
-#define USE_MAG_QMC5883
-#define USE_MAG_IST8310
-#define USE_MAG_MAG3110
-#define USE_MAG_LIS3MDL
+#define USE_MAG_ALL
 
 #define TEMPERATURE_I2C_BUS     BUS_I2C2
 
@@ -119,7 +111,6 @@
 #define SPI3_MISO_PIN           PB4
 #define SPI3_MOSI_PIN           PB5
 
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_BUS         BUS_SPI3
 #define MAX7456_CS_PIN          PA15
@@ -148,10 +139,6 @@
 #define DEFAULT_RX_TYPE                 RX_TYPE_SERIAL
 #define SERIALRX_PROVIDER               SERIALRX_SBUS
 
-// Disable PWM & PPM inputs
-#undef USE_RX_PWM
-#undef USE_RX_PPM
-
 // Set default UARTs
 #define TELEMETRY_UART                  SERIAL_PORT_SOFTSERIAL1
 #define SERIALRX_UART                   SERIAL_PORT_USART1
@@ -170,6 +157,4 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         0xffff
 
-#define PCA9685_I2C_BUS         BUS_I2C2
 #define PITOT_I2C_BUS           BUS_I2C2
-#define BNO055_I2C_BUS          BUS_I2C2

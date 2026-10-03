@@ -58,10 +58,6 @@
 #define I2C_DEVICE_2_SHARES_UART3
 #endif
 
-#define USE_EXTI
-#define GYRO_INT_EXTI            PC8
-// #define USE_MPU_DATA_READY_SIGNAL        // Not connected on FireworksV2
-
 #define USE_DUAL_GYRO
 #define USE_TARGET_IMU_HARDWARE_DESCRIPTORS     // Don't use common busdev descriptors for IMU
 #define USE_IMU_MPU6500
@@ -91,11 +87,7 @@
 #else
 #define MAG_I2C_BUS             BUS_I2C2
 #endif
-#define USE_MAG_HMC5883
-#define USE_MAG_QMC5883
-#define USE_MAG_IST8310
-#define USE_MAG_MAG3110
-#define USE_MAG_LIS3MDL
+#define USE_MAG_ALL
 
 #if defined(OMNIBUSF4V6)
 #define TEMPERATURE_I2C_BUS     BUS_I2C1
@@ -123,7 +115,6 @@
 #else
 #define RANGEFINDER_I2C_BUS     BUS_I2C2
 #endif
-#define USE_RANGEFINDER_HCSR04_I2C
 
 #define USE_VCP
 #define VBUS_SENSING_PIN        PC5
@@ -175,7 +166,6 @@
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
 
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_BUS         BUS_SPI3
 #define MAX7456_CS_PIN          PA15
@@ -229,10 +219,3 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         0xffff
 
-#if defined(OMNIBUSF4V6)
-#define PCA9685_I2C_BUS         BUS_I2C1
-#define BNO055_I2C_BUS          BUS_I2C1
-#else
-#define PCA9685_I2C_BUS         BUS_I2C2
-#define BNO055_I2C_BUS          BUS_I2C2
-#endif

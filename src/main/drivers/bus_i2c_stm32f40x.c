@@ -121,7 +121,7 @@ typedef struct i2cBusState_s {
     I2CDevice       device;
     bool            initialized;
     i2cState_t      state;
-    uint32_t        timeout;
+    timeUs_t        timeout;
 
     /* Active transfer */
     bool                        allowRawAccess;
@@ -458,7 +458,7 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
 
 void i2cSetSpeed(uint8_t speed)
 {
-    for (unsigned int i = 0; i < sizeof(i2cHardwareMap) / sizeof(i2cHardwareMap[0]); i++) {
+    for (unsigned int i = 0; i < ARRAYLEN(i2cHardwareMap); i++) {
         i2cHardwareMap[i].speed = speed;
     }
 }

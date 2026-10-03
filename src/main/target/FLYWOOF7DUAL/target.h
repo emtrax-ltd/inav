@@ -23,12 +23,9 @@
 #define BEEPER                  PC14
 #define BEEPER_INVERTED
 
-/*** IMU sensors ***/
-#define USE_EXTI
-
 // We use dual IMU sensors, they have to be described in the target file
 #define USE_TARGET_IMU_HARDWARE_DESCRIPTORS
-#define USE_MPU_DATA_READY_SIGNAL
+
 #define USE_DUAL_GYRO
 
 #define USE_IMU_MPU6000
@@ -36,12 +33,10 @@
 
 #define GYRO_1_SPI_BUS          BUS_SPI1
 #define GYRO_1_CS_PIN           PA4
-#define GYRO_1_EXTI_PIN         PC3
 #define GYRO_1_ALIGN            CW180_DEG_FLIP
 
 #define GYRO_2_SPI_BUS          BUS_SPI1
 #define GYRO_2_CS_PIN           PB2
-#define GYRO_2_EXTI_PIN         PC4
 #define GYRO_2_ALIGN            CW270_DEG 
 
 /*** SPI/I2C bus ***/
@@ -73,7 +68,6 @@
 #define M25P16_SPI_BUS          BUS_SPI3
 
 /*** OSD ***/
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_CS_PIN          PB12
 #define MAX7456_SPI_BUS         BUS_SPI2
@@ -113,15 +107,9 @@
 #define USE_BARO_BMP280
 #define USE_BARO_MS5611
 
-#define BNO055_I2C_BUS          BUS_I2C1
-
 #define USE_MAG
 #define MAG_I2C_BUS             BUS_I2C1
-#define USE_MAG_HMC5883
-#define USE_MAG_QMC5883
-#define USE_MAG_IST8310
-#define USE_MAG_MAG3110
-#define USE_MAG_LIS3MDL
+#define USE_MAG_ALL
 
 /*** ADC ***/
 #define USE_ADC
@@ -145,6 +133,7 @@
 #define WS2811_PIN                      PA8
  
 /*** Default settings ***/
+#define DEFAULT_FEATURES                (FEATURE_OSD | FEATURE_CURRENT_METER | FEATURE_VBAT | FEATURE_TELEMETRY | FEATURE_TX_PROF_SEL | FEATURE_BLACKBOX)
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 #define CURRENT_METER_SCALE_DEFAULT     170
 #define SERIALRX_UART                   SERIAL_PORT_USART1

@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "platform.h"
+
 #define DEBUG32_VALUE_COUNT 8
 extern int32_t debug[DEBUG32_VALUE_COUNT];
 extern uint8_t debugMode;
@@ -52,12 +54,9 @@ extern timeUs_t sectionTimes[2][4];
 
 typedef enum {
     DEBUG_NONE,
-    DEBUG_GYRO,
     DEBUG_AGL,
     DEBUG_FLOW_RAW,
     DEBUG_FLOW,
-    DEBUG_SBUS,
-    DEBUG_FPORT,
     DEBUG_ALWAYS,
     DEBUG_SAG_COMP_VOLTAGE,
     DEBUG_VIBE,
@@ -65,23 +64,27 @@ typedef enum {
     DEBUG_REM_FLIGHT_TIME,
     DEBUG_SMARTAUDIO,
     DEBUG_ACC,
-    DEBUG_ERPM,
-    DEBUG_RPM_FILTER,
-    DEBUG_RPM_FREQ,
     DEBUG_NAV_YAW,
-    DEBUG_DYNAMIC_FILTER,
-    DEBUG_DYNAMIC_FILTER_FREQUENCY,
-    DEBUG_IRLOCK,
-    DEBUG_CD,
-    DEBUG_KALMAN_GAIN,
-    DEBUG_PID_MEASUREMENT,
-    DEBUG_SPM_CELLS,    // Smartport master FLVSS
-    DEBUG_SPM_VS600,    // Smartport master VS600 VTX
-    DEBUG_SPM_VARIO,    // Smartport master variometer
     DEBUG_PCF8574,
     DEBUG_DYNAMIC_GYRO_LPF,
-    DEBUG_FW_D,
-    DEBUG_IMU2,
+    DEBUG_AUTOLEVEL,
     DEBUG_ALTITUDE,
-    DEBUG_COUNT
+    DEBUG_AUTOTRIM,
+    DEBUG_AUTOTUNE,
+    DEBUG_RATE_DYNAMICS,
+    DEBUG_LANDING,
+    DEBUG_POS_EST,
+    DEBUG_ADAPTIVE_FILTER,
+    DEBUG_HEADTRACKING,
+    DEBUG_GPS,
+    DEBUG_LULU,
+    DEBUG_SBUS2,
+    DEBUG_ESC,
+    DEBUG_COUNT // also update debugModeNames in cli.c
 } debugType_e;
+
+#ifdef SITL_BUILD
+#define SD(X) (X)
+#else
+#define SD(X)
+#endif

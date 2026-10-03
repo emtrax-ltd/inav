@@ -77,9 +77,9 @@ static int8_t RTHInitialAltitudeChangePitchAngle(float altitudeChange) {
 // pitch in degrees
 // output in Watt
 static float estimatePitchPower(float pitch) {
-    int16_t altitudeChangeThrottle = (int16_t)pitch * navConfig()->fw.pitch_to_throttle;
-    altitudeChangeThrottle = constrain(altitudeChangeThrottle, navConfig()->fw.min_throttle, navConfig()->fw.max_throttle);
-    const float altitudeChangeThrToCruiseThrRatio = (float)(altitudeChangeThrottle - getThrottleIdleValue()) / (navConfig()->fw.cruise_throttle - getThrottleIdleValue());
+    int16_t altitudeChangeThrottle = (int16_t)pitch * currentBatteryProfile->nav.fw.pitch_to_throttle;
+    altitudeChangeThrottle = constrain(altitudeChangeThrottle, currentBatteryProfile->nav.fw.min_throttle, currentBatteryProfile->nav.fw.max_throttle);
+    const float altitudeChangeThrToCruiseThrRatio = (float)(altitudeChangeThrottle - getThrottleIdleValue()) / (currentBatteryProfile->nav.fw.cruise_throttle - getThrottleIdleValue());
     return (float)heatLossesCompensatedPower(batteryMetersConfig()->idle_power + batteryMetersConfig()->cruise_power * altitudeChangeThrToCruiseThrRatio) / 100;
 }
 
@@ -127,7 +127,7 @@ static float estimateRTHDistanceAndHeadingAfterAltitudeChange(float altitudeChan
         float triangleAltitudeToReturnStart = estimatedAltitudeChangeGroundDistance - GPS_distanceToHome * cos_approx(headingDiff);
         const float reverseHeadingDiff = RADIANS_TO_DEGREES(atan2_approx(triangleAltitude, triangleAltitudeToReturnStart));
         *heading = CENTIDEGREES_TO_DEGREES(wrap_36000(DEGREES_TO_CENTIDEGREES(180 + reverseHeadingDiff + DECIDEGREES_TO_DEGREES((float)attitude.values.yaw))));
-        return sqrt(sq(triangleAltitude) + sq(triangleAltitudeToReturnStart));
+        return calc_length_pythagorean_2D(triangleAltitude, triangleAltitudeToReturnStart);
     } else {
         *heading = GPS_directionToHome;
         return GPS_distanceToHome - estimatedAltitudeChangeGroundDistance;
@@ -150,10 +150,10 @@ static float calculateRemainingEnergyBeforeRTH(bool takeWindIntoAccount) {
 
     float RTH_heading; // degrees
 #ifdef USE_WIND_ESTIMATOR
-    uint16_t windHeading; // centidegrees
+    uint16_t windHeading = 0; // centidegrees
     const float horizontalWindSpeed = takeWindIntoAccount ? getEstimatedHorizontalWindSpeed(&windHeading) / 100 : 0; // m/s
     const float windHeadingDegrees = CENTIDEGREES_TO_DEGREES((float)windHeading);
-    const float verticalWindSpeed = getEstimatedWindSpeed(Z) / 100;
+    const float verticalWindSpeed = -getEstimatedWindSpeed(Z) / 100; //from NED to NEU
 
     const float RTH_distance = estimateRTHDistanceAndHeadingAfterAltitudeChange(RTH_initial_altitude_change, horizontalWindSpeed, windHeadingDegrees, verticalWindSpeed, &RTH_heading);
     const float RTH_speed = windCompensatedForwardSpeed((float)navConfig()->fw.cruise_speed / 100, RTH_heading, horizontalWindSpeed, windHeadingDegrees);
@@ -209,8 +209,8 @@ float calculateRemainingFlightTimeBeforeRTH(bool takeWindIntoAccount) {
 // returns meters
 float calculateRemainingDistanceBeforeRTH(bool takeWindIntoAccount) {
 
-    // Fixed wing only for now
-    if (!(STATE(FIXED_WING_LEGACY) || ARMING_FLAG(ARMED))) {
+    // Fixed wing only for now, and must be armed
+    if (!STATE(AIRPLANE) || !ARMING_FLAG(ARMED)) {
         return -1;
     }
 
@@ -222,7 +222,7 @@ float calculateRemainingDistanceBeforeRTH(bool takeWindIntoAccount) {
 
     // check requirements
     const bool areBatterySettingsOK = feature(FEATURE_VBAT) && feature(FEATURE_CURRENT_METER) && batteryWasFullWhenPluggedIn();
-    const bool areRTHEstimatorSettingsOK = batteryMetersConfig()->cruise_power > 0 && currentBatteryProfile->capacity.unit == BAT_CAPACITY_UNIT_MWH &&currentBatteryProfile->capacity.value > 0 && navConfig()->fw.cruise_speed > 0;
+    const bool areRTHEstimatorSettingsOK = batteryMetersConfig()->cruise_power > 0 && batteryMetersConfig()->capacity_unit == BAT_CAPACITY_UNIT_MWH && currentBatteryProfile->capacity.value > 0 && navConfig()->fw.cruise_speed > 0;
     const bool isNavigationOK = navigationPositionEstimateIsHealthy() && isImuHeadingValid();
 
     if (!(areBatterySettingsOK && areRTHEstimatorSettingsOK && isNavigationOK)) {

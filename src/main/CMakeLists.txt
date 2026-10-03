@@ -1,3 +1,4 @@
+
 main_sources(COMMON_SRC
     main.c
 
@@ -30,6 +31,8 @@ main_sources(COMMON_SRC
     common/gps_conversion.h
     common/log.c
     common/log.h
+    common/lulu.c
+    common/lulu.h
     common/maths.c
     common/maths.h
     common/memory.c
@@ -71,42 +74,31 @@ main_sources(COMMON_SRC
 
     drivers/accgyro/accgyro.c
     drivers/accgyro/accgyro.h
-    drivers/accgyro/accgyro_adxl345.c
-    drivers/accgyro/accgyro_adxl345.h
-    drivers/accgyro/accgyro_bma280.c
-    drivers/accgyro/accgyro_bma280.h
     drivers/accgyro/accgyro_bmi088.c
     drivers/accgyro/accgyro_bmi088.h
     drivers/accgyro/accgyro_bmi160.c
     drivers/accgyro/accgyro_bmi160.h
+    drivers/accgyro/accgyro_bmi270.c
+    drivers/accgyro/accgyro_bmi270.h
+    drivers/accgyro/accgyro_bmi270_maximum_fifo.c
     drivers/accgyro/accgyro_fake.c
     drivers/accgyro/accgyro_fake.h
     drivers/accgyro/accgyro_icm20689.c
     drivers/accgyro/accgyro_icm20689.h
-    drivers/accgyro/accgyro_l3g4200d.c
-    drivers/accgyro/accgyro_l3g4200d.h
-    drivers/accgyro/accgyro_l3gd20.c
-    drivers/accgyro/accgyro_l3gd20.h
-    drivers/accgyro/accgyro_lsm303dlhc.c
-    drivers/accgyro/accgyro_lsm303dlhc.h
-    drivers/accgyro/accgyro_mma845x.c
-    drivers/accgyro/accgyro_mma845x.h
+    drivers/accgyro/accgyro_icm42605.c
+    drivers/accgyro/accgyro_icm42605.h
+    drivers/accgyro/accgyro_icm45686.c
+    drivers/accgyro/accgyro_icm45686.h
     drivers/accgyro/accgyro_mpu.c
     drivers/accgyro/accgyro_mpu.h
-    drivers/accgyro/accgyro_mpu3050.c
-    drivers/accgyro/accgyro_mpu3050.h
     drivers/accgyro/accgyro_mpu6000.c
     drivers/accgyro/accgyro_mpu6000.h
-    drivers/accgyro/accgyro_mpu6050.c
-    drivers/accgyro/accgyro_mpu6050.h
     drivers/accgyro/accgyro_mpu6500.c
     drivers/accgyro/accgyro_mpu6500.h
     drivers/accgyro/accgyro_mpu9250.c
     drivers/accgyro/accgyro_mpu9250.h
-    drivers/accgyro/accgyro_bno055.c
-    drivers/accgyro/accgyro_bno055.h
-    drivers/accgyro/accgyro_bno055_serial.c
-    drivers/accgyro/accgyro_bno055_serial.h
+    drivers/accgyro/accgyro_lsm6dxx.c
+    drivers/accgyro/accgyro_lsm6dxx.h
 
     drivers/adc.c
     drivers/adc.h
@@ -130,6 +122,8 @@ main_sources(COMMON_SRC
     drivers/barometer/barometer_spl06.h
     drivers/barometer/barometer_msp.c
     drivers/barometer/barometer_msp.h
+    drivers/barometer/barometer_2smpb_02b.c
+    drivers/barometer/barometer_2smpb_02b.h
 
     drivers/buf_writer.c
     drivers/buf_writer.h
@@ -160,8 +154,14 @@ main_sources(COMMON_SRC
     drivers/compass/compass_mpu9250.h
     drivers/compass/compass_qmc5883l.c
     drivers/compass/compass_qmc5883l.h
+    drivers/compass/compass_qmc5883p.c
+    drivers/compass/compass_qmc5883p.h
     drivers/compass/compass_rm3100.c
     drivers/compass/compass_rm3100.h
+    drivers/compass/compass_vcm5883.c
+    drivers/compass/compass_vcm5883.h
+    drivers/compass/compass_mlx90393.c
+    drivers/compass/compass_mlx90393.h
     drivers/compass/compass_msp.c
     drivers/compass/compass_msp.h
 
@@ -181,10 +181,14 @@ main_sources(COMMON_SRC
     drivers/flash.h
     drivers/flash_m25p16.c
     drivers/flash_m25p16.h
+    drivers/flash_w25n.c
+    drivers/flash_w25n.h
+    drivers/gimbal_common.h
+    drivers/gimbal_common.c
+    drivers/headtracker_common.h
+    drivers/headtracker_common.c
     drivers/io.c
     drivers/io.h
-    drivers/io_pca9685.c
-    drivers/io_pca9685.h
     drivers/io_pcf8574.c
     drivers/io_pcf8574.h
     drivers/io_port_expander.c
@@ -215,10 +219,16 @@ main_sources(COMMON_SRC
     drivers/pitotmeter/pitotmeter_adc.h
     drivers/pitotmeter/pitotmeter_ms4525.c
     drivers/pitotmeter/pitotmeter_ms4525.h
+    drivers/pitotmeter/pitotmeter_ms5525.c
+    drivers/pitotmeter/pitotmeter_ms5525.h
+    drivers/pitotmeter/pitotmeter_dlvr_l10d.c
+    drivers/pitotmeter/pitotmeter_dlvr_l10d.h
     drivers/pitotmeter/pitotmeter_msp.c
     drivers/pitotmeter/pitotmeter_msp.h
     drivers/pitotmeter/pitotmeter_virtual.c
     drivers/pitotmeter/pitotmeter_virtual.h
+    drivers/pitotmeter/pitotmeter_fake.h
+    drivers/pitotmeter/pitotmeter_fake.c
     drivers/pwm_esc_detect.c
     drivers/pwm_esc_detect.h
     drivers/pwm_mapping.c
@@ -228,10 +238,6 @@ main_sources(COMMON_SRC
     drivers/pinio.c
     drivers/pinio.h
 
-    drivers/rangefinder/rangefinder_hcsr04.c
-    drivers/rangefinder/rangefinder_hcsr04.h
-    drivers/rangefinder/rangefinder_hcsr04_i2c.c
-    drivers/rangefinder/rangefinder_hcsr04_i2c.h
     drivers/rangefinder/rangefinder_srf10.c
     drivers/rangefinder/rangefinder_srf10.h
     drivers/rangefinder/rangefinder_vl53l0x.c
@@ -242,15 +248,15 @@ main_sources(COMMON_SRC
     drivers/rangefinder/rangefinder_virtual.h
     drivers/rangefinder/rangefinder_us42.c
     drivers/rangefinder/rangefinder_us42.h
-    
+    drivers/rangefinder/rangefinder_tof10120_i2c.c
+    drivers/rangefinder/rangefinder_tof10120_i2c.h
+    drivers/rangefinder/rangefinder_teraranger_evo.c
+    drivers/rangefinder/rangefinder_teraranger_evo.h
+
     drivers/resource.c
     drivers/resource.h
     drivers/rcc.c
     drivers/rcc.h
-    drivers/rx_pwm.c
-    drivers/rx_pwm.h
-    drivers/rx_spi.c
-    drivers/rx_spi.h
     drivers/serial.c
     drivers/serial.h
     drivers/sound_beeper.c
@@ -278,8 +284,9 @@ main_sources(COMMON_SRC
     fc/cli.h
     fc/config.c
     fc/config.h
-    fc/controlrate_profile.c
-    fc/controlrate_profile.h
+    fc/control_profile.c
+    fc/control_profile.h
+    fc/control_profile_config_struct.h
     fc/fc_core.c
     fc/fc_core.h
     fc/fc_init.c
@@ -295,6 +302,8 @@ main_sources(COMMON_SRC
     fc/firmware_update.h
     fc/firmware_update_common.c
     fc/firmware_update_common.h
+    fc/multifunction.c
+    fc/multifunction.h
     fc/rc_smoothing.c
     fc/rc_smoothing.h
     fc/rc_adjustments.c
@@ -314,21 +323,27 @@ main_sources(COMMON_SRC
 
     flight/failsafe.c
     flight/failsafe.h
-    flight/hil.c
-    flight/hil.h
     flight/imu.c
     flight/imu.h
     flight/kalman.c
     flight/kalman.h
+    flight/smith_predictor.c
+    flight/smith_predictor.h
+    flight/rate_dynamics.c
+    flight/rate_dynamics.h
     flight/mixer.c
     flight/mixer.h
     flight/pid.c
     flight/pid.h
     flight/pid_autotune.c
+    flight/power_limits.c
+    flight/power_limits.h
     flight/rth_estimator.c
     flight/rth_estimator.h
     flight/servos.c
     flight/servos.h
+    flight/mixer_profile.c
+    flight/mixer_profile.h
     flight/wind_estimator.c
     flight/wind_estimator.h
     flight/gyroanalyse.c
@@ -337,27 +352,32 @@ main_sources(COMMON_SRC
     flight/rpm_filter.h
     flight/dynamic_gyro_notch.c
     flight/dynamic_gyro_notch.h
+    flight/secondary_dynamic_gyro_notch.c
+    flight/secondary_dynamic_gyro_notch.h
     flight/dynamic_lpf.c
     flight/dynamic_lpf.h
-    flight/secondary_imu.c
-    flight/secondary_imu.h
+    flight/ez_tune.c
+    flight/ez_tune.h
+    flight/adaptive_filter.c
+    flight/adaptive_filter.h
 
+    io/adsb.c
     io/beeper.c
     io/beeper.h
-    io/esc_serialshot.c
-    io/esc_serialshot.h
     io/servo_sbus.c
     io/servo_sbus.h
     io/frsky_osd.c
     io/frsky_osd.h
+    io/gimbal_serial.c
+    io/gimbal_serial.h
+    io/headtracker_msp.c
+    io/headtracker_msp.h
     io/osd_dji_hd.c
     io/osd_dji_hd.h
     io/lights.c
     io/lights.h
     io/piniobox.c
     io/piniobox.h
-    io/pwmdriver_i2c.c
-    io/pwmdriver_i2c.h
     io/serial.c
     io/serial.h
     io/serial_4way.c
@@ -373,6 +393,8 @@ main_sources(COMMON_SRC
     io/rcdevice_cam.c
     io/rcdevice_cam.h
 
+    io/osd/custom_elements.c
+
     msp/msp_serial.c
     msp/msp_serial.h
 
@@ -387,8 +409,6 @@ main_sources(COMMON_SRC
 
     rx/crsf.c
     rx/crsf.h
-    rx/eleres.c
-    rx/eleres.h
     rx/fport.c
     rx/fport.h
     rx/fport2.c
@@ -406,14 +426,10 @@ main_sources(COMMON_SRC
     rx/msp.h
     rx/msp_override.c
     rx/msp_override.h
-    rx/pwm.c
-    rx/pwm.h
     rx/frsky_crc.c
     rx/frsky_crc.h
     rx/rx.c
     rx/rx.h
-    rx/rx_spi.c
-    rx/rx_spi.h
     rx/sbus.c
     rx/sbus.h
     rx/sbus_channels.c
@@ -424,10 +440,9 @@ main_sources(COMMON_SRC
     rx/srxl2.h
     rx/sumd.c
     rx/sumd.h
-    rx/sumh.c
-    rx/sumh.h
-    rx/xbus.c
-    rx/xbus.h
+    rx/sim.c
+    rx/sim.h
+
 
     scheduler/scheduler.c
     scheduler/scheduler.h
@@ -436,6 +451,7 @@ main_sources(COMMON_SRC
     sensors/acceleration.h
     sensors/battery.c
     sensors/battery.h
+    sensors/battery_config_structs.h
     sensors/boardalignment.c
     sensors/boardalignment.h
     sensors/compass.c
@@ -450,6 +466,7 @@ main_sources(COMMON_SRC
     sensors/esc_sensor.h
     sensors/irlock.c
     sensors/irlock.h
+    sensors/sensors.c
     sensors/temperature.c
     sensors/temperature.h
 
@@ -488,6 +505,9 @@ main_sources(COMMON_SRC
     io/rangefinder.h
     io/rangefinder_msp.c
     io/rangefinder_benewake.c
+    io/rangefinder_usd1_v0.c
+    io/rangefinder_nanoradar.c
+    io/rangefinder_fake.c
     io/opflow.h
     io/opflow_cxof.c
     io/opflow_msp.c
@@ -499,8 +519,12 @@ main_sources(COMMON_SRC
     io/displayport_max7456.h
     io/displayport_msp.c
     io/displayport_msp.h
+    io/displayport_msp_dji_compat.c
+    io/displayport_msp_dji_compat.h
     io/displayport_oled.c
     io/displayport_oled.h
+    io/displayport_msp_osd.c
+    io/displayport_msp_osd.h
     io/displayport_srxl.c
     io/displayport_srxl.h
     io/displayport_hott.c
@@ -510,14 +534,16 @@ main_sources(COMMON_SRC
     io/gps.c
     io/gps.h
     io/gps_ublox.c
-    io/gps_nmea.c
-    io/gps_naza.c
+    io/gps_ublox_utils.c
     io/gps_msp.c
+    io/gps_fake.c
     io/gps_private.h
     io/ledstrip.c
     io/ledstrip.h
     io/osd.c
     io/osd.h
+    io/osd_utils.c
+    io/osd_utils.h
     io/osd_canvas.c
     io/osd_canvas.h
     io/osd_common.c
@@ -526,6 +552,8 @@ main_sources(COMMON_SRC
     io/osd_grid.h
     io/osd_hud.c
     io/osd_hud.h
+    io/osd_joystick.c
+    io/osd_joystick.h
     io/smartport_master.c
     io/smartport_master.h
     io/vtx.c
@@ -540,6 +568,8 @@ main_sources(COMMON_SRC
     io/vtx_ffpv24g.h
     io/vtx_control.c
     io/vtx_control.h
+    io/vtx_msp.c
+    io/vtx_msp.h
 
     navigation/navigation.c
     navigation/navigation.h
@@ -553,6 +583,11 @@ main_sources(COMMON_SRC
     navigation/navigation_pos_estimator_flow.c
     navigation/navigation_private.h
     navigation/navigation_rover_boat.c
+    navigation/navigation_geozone.c
+    navigation/sqrt_controller.c
+    navigation/sqrt_controller.h
+    navigation/rth_trackback.c
+    navigation/rth_trackback.h
 
     sensors/barometer.c
     sensors/barometer.h
@@ -562,19 +597,19 @@ main_sources(COMMON_SRC
     sensors/rangefinder.h
     sensors/opflow.c
     sensors/opflow.h
+    sensors/battery_sensor_fake.c
+    sensors/battery_sensor_fake.h
 
     telemetry/crsf.c
     telemetry/crsf.h
     telemetry/srxl.c
     telemetry/srxl.h
-    telemetry/frsky.c
-    telemetry/frsky.h
-    telemetry/frsky_d.c
-    telemetry/frsky_d.h
     telemetry/ghst.c
     telemetry/ghst.h
     telemetry/hott.c
     telemetry/hott.h
+    telemetry/jetiexbus.c
+    telemetry/jetiexbus.h
     telemetry/ibus_shared.c
     telemetry/ibus_shared.h
     telemetry/ibus.c
@@ -585,6 +620,10 @@ main_sources(COMMON_SRC
     telemetry/mavlink.h
     telemetry/msp_shared.c
     telemetry/msp_shared.h
+    telemetry/sbus2.c
+    telemetry/sbus2.h
+    telemetry/sbus2_sensors.c
+    telemetry/sbus2_sensors.h
     telemetry/smartport.c
     telemetry/smartport.h
     telemetry/sim.c

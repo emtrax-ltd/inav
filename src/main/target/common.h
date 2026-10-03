@@ -29,17 +29,12 @@
 #define NOINLINE
 #endif
 
-#if defined(STM32F3)
-#define DYNAMIC_HEAP_SIZE   1024
-#else
 #define DYNAMIC_HEAP_SIZE   2048
-#endif
 
 #define I2C1_OVERCLOCK false
 #define I2C2_OVERCLOCK false
 #define USE_I2C_PULLUP          // Enable built-in pullups on all boards in case external ones are too week
 
-#define USE_RX_PPM
 #define USE_SERIAL_RX
 #define USE_SERIALRX_SPEKTRUM   // Cheap and fairly common protocol
 #define USE_SERIALRX_SBUS       // Very common protocol
@@ -47,19 +42,11 @@
 #define USE_SERIALRX_FPORT
 #define USE_SERIALRX_FPORT2
 
+//#define USE_DEV_TOOLS           // tools for dev use only. Undefine for release builds.
+
 #define COMMON_DEFAULT_FEATURES (FEATURE_TX_PROF_SEL)
 
-#if defined(STM32F3)
-#define USE_UNDERCLOCK
-//save flash for F3 targets
-#define CLI_MINIMAL_VERBOSITY
-#define SKIP_CLI_COMMAND_HELP
-#define SKIP_CLI_RESOURCES
-#endif
-
-#if defined(STM32F4) || defined(STM32F7)
 #define USE_SERVO_SBUS
-#endif
 
 #define USE_ADC_AVERAGING
 #define USE_64BIT_TIME
@@ -67,30 +54,26 @@
 #define USE_GPS
 #define USE_GPS_PROTO_UBLOX
 #define USE_GPS_PROTO_MSP
-#define USE_NAV
 #define USE_TELEMETRY
 #define USE_TELEMETRY_LTM
-#define USE_TELEMETRY_FRSKY
+#define USE_GPS_FIX_ESTIMATION
 
-#if defined(STM_FAST_TARGET)
+// This is the shortest period in microseconds that the scheduler will allow
 #define SCHEDULER_DELAY_LIMIT           10
-#else
-#define SCHEDULER_DELAY_LIMIT           100
+
+#if defined(MAG_I2C_BUS) || defined(VCM5883_I2C_BUS)
+#define USE_MAG_VCM5883
 #endif
 
-#if (MCU_FLASH_SIZE > 256)
 #define USE_MR_BRAKING_MODE
 #define USE_PITOT
 #define USE_PITOT_ADC
-#define USE_PITOT_VIRTUAL
 
 #define USE_DYNAMIC_FILTERS
 #define USE_GYRO_KALMAN
+#define USE_SMITH_PREDICTOR
+#define USE_RATE_DYNAMICS
 #define USE_EXTENDED_CMS_MENUS
-#define USE_HOTT_TEXTMODE
-
-// NAZA GPS support for F4+ only
-#define USE_GPS_PROTO_NAZA
 
 // Allow default rangefinders
 #define USE_RANGEFINDER
@@ -98,8 +81,11 @@
 #define USE_RANGEFINDER_BENEWAKE
 #define USE_RANGEFINDER_VL53L0X
 #define USE_RANGEFINDER_VL53L1X
-#define USE_RANGEFINDER_HCSR04_I2C
 #define USE_RANGEFINDER_US42
+#define USE_RANGEFINDER_TOF10120_I2C
+#define USE_RANGEFINDER_TERARANGER_EVO_I2C
+#define USE_RANGEFINDER_USD1_V0
+#define USE_RANGEFINDER_NANORADAR
 
 // Allow default optic flow boards
 #define USE_OPFLOW
@@ -109,7 +95,9 @@
 // Allow default airspeed sensors
 #define USE_PITOT
 #define USE_PITOT_MS4525
+#define USE_PITOT_MS5525
 #define USE_PITOT_MSP
+#define USE_PITOT_DLVR
 
 #define USE_1WIRE
 #define USE_1WIRE_DS2482
@@ -123,33 +111,23 @@
 #define DASHBOARD_ARMED_BITMAP
 #define USE_OLED_UG2864
 
-#define USE_PWM_DRIVER_PCA9685
-
+#define USE_OSD
 #define USE_FRSKYOSD
 #define USE_DJI_HD_OSD
-#define USE_SMARTPORT_MASTER
+#define USE_MSP_OSD
 
 #define NAV_NON_VOLATILE_WAYPOINT_CLI
-
-#define NAV_AUTO_MAG_DECLINATION_PRECISE
 
 #define USE_D_BOOST
 #define USE_ANTIGRAVITY
 
 #define USE_I2C_IO_EXPANDER
 
-#define USE_GPS_PROTO_NMEA
-#define USE_GPS_PROTO_MTK
-
 #define USE_TELEMETRY_SIM
-#define USE_TELEMETRY_HOTT
 #define USE_TELEMETRY_MAVLINK
 #define USE_MSP_OVER_TELEMETRY
 
 #define USE_SERIALRX_SRXL2     // Spektrum SRXL2 protocol
-#define USE_SERIALRX_SUMD
-#define USE_SERIALRX_SUMH
-#define USE_SERIALRX_XBUS
 #define USE_SERIALRX_JETIEXBUS
 #define USE_SERIALRX_MAVLINK
 #define USE_TELEMETRY_SRXL
@@ -162,53 +140,93 @@
 #define USE_SERIALRX_GHST
 #define USE_TELEMETRY_GHST
 
-#define USE_SECONDARY_IMU
-#define USE_IMU_BNO055
+#define USE_POWER_LIMITS
 
-#else // MCU_FLASH_SIZE < 256
-#define LOG_LEVEL_MAXIMUM LOG_LEVEL_ERROR
-#endif
-
-#if (MCU_FLASH_SIZE > 128)
-#define NAV_FIXED_WING_LANDING
 #define USE_SAFE_HOME
+#define USE_FW_AUTOLAND
 #define USE_AUTOTUNE_FIXED_WING
 #define USE_LOG
 #define USE_STATS
 #define USE_CMS
 #define CMS_MENU_OSD
-#define NAV_GPS_GLITCH_DETECTION
 #define NAV_NON_VOLATILE_WAYPOINT_STORAGE
 #define USE_TELEMETRY_IBUS
 #define USE_TELEMETRY_SMARTPORT
 #define USE_TELEMETRY_CRSF
+#define USE_TELEMETRY_JETIEXBUS
 // These are rather exotic serial protocols
 #define USE_RX_MSP
-//#define USE_MSP_RC_OVERRIDE
+#define USE_MSP_RC_OVERRIDE
 #define USE_SERIALRX_CRSF
-#define USE_PWM_SERVO_DRIVER
 #define USE_SERIAL_PASSTHROUGH
-#define NAV_MAX_WAYPOINTS       60
+#define NAV_MAX_WAYPOINTS       120
 #define USE_RCDEVICE
+#define USE_MULTI_MISSION
+#define USE_MULTI_FUNCTIONS  // defines functions only, warnings always defined
 
 //Enable VTX control
 #define USE_VTX_CONTROL
 #define USE_VTX_SMARTAUDIO
 #define USE_VTX_TRAMP
-#define USE_VTX_FFPV
+#define USE_VTX_MSP
 
-#ifndef STM32F3 //F3 series does not have enoug RAM to support logic conditions
 #define USE_PROGRAMMING_FRAMEWORK
 #define USE_CLI_BATCH
-#endif
 
 //Enable DST calculations
 #define RTC_AUTOMATIC_DST
 // Wind estimator
 #define USE_WIND_ESTIMATOR
 
-#else // MCU_FLASH_SIZE < 128
+#define USE_SIMULATOR
+#define USE_PITOT_VIRTUAL
+#define USE_FAKE_BATT_SENSOR
+#define USE_RANGEFINDER_FAKE
+#define USE_RX_SIM
 
-#define SKIP_TASK_STATISTICS
+#define USE_CMS_FONT_PREVIEW
 
+//ADSB RECEIVER
+#ifdef USE_GPS
+#define USE_ADSB
+#define MAX_ADSB_VEHICLES               5
+#define ADSB_LIMIT_CM                   6400000
 #endif
+
+#define USE_SERIAL_GIMBAL
+#define USE_HEADTRACKER
+#define USE_HEADTRACKER_SERIAL
+#define USE_HEADTRACKER_MSP
+
+#if defined(STM32F7) || defined(STM32H7)
+// needs bi-direction inverter, not available on F4 hardware.
+#define USE_TELEMETRY_SBUS2
+#endif
+
+//Designed to free space of F722 and F411 MCUs
+#if (MCU_FLASH_SIZE > 512)
+#define USE_VTX_FFPV
+#define USE_SERIALRX_SUMD
+#define USE_TELEMETRY_HOTT
+#define USE_HOTT_TEXTMODE
+#define USE_34CHANNELS
+#define MAX_MIXER_PROFILE_COUNT 2
+#define USE_SMARTPORT_MASTER
+#ifdef USE_GPS
+#define USE_GEOZONE
+#define MAX_GEOZONES_IN_CONFIG 63
+#define MAX_VERTICES_IN_CONFIG 126
+#endif
+#elif !defined(STM32F7)
+#define MAX_MIXER_PROFILE_COUNT 1
+#endif
+
+#if (MCU_FLASH_SIZE <= 512)
+    #define SKIP_CLI_COMMAND_HELP
+    #undef USE_SERIALRX_SPEKTRUM
+    #undef USE_TELEMETRY_SRXL
+#endif
+
+#define USE_EZ_TUNE
+#define USE_ADAPTIVE_FILTER
+
